@@ -2,24 +2,27 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
-// Replace with your actual Firebase config
+// Use environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "your-api-key",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "your-project.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://your-project-default-rtdb.firebaseio.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "your-project-id",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "your-project.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "your-app-id"
+  apiKey: "AIzaSyCeLsqlF0tUDEJlbpGre-QZRK_o4fsKIEE",
+  authDomain: "bridgeon-house-scoring.firebaseapp.com",
+  projectId: "bridgeon-house-scoring",
+   databaseURL: "https://bridgeon-house-scoring-default-rtdb.firebaseio.com/", 
+  storageBucket: "bridgeon-house-scoring.firebasestorage.app",
+  messagingSenderId: "619628309614",
+  appId: "1:619628309614:web:bfe6da71ae236718bc4a7f",
+  measurementId: "G-8CRH8SF4GL"
 };
+
+// Log for debugging (remove in production)
+console.log('Firebase Config Loaded:', {
+  projectId: firebaseConfig.projectId,
+  databaseURL: firebaseConfig.databaseURL
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
-
-// Initialize Realtime Database and get a reference to the service
 export const database = getDatabase(app);
-
 export default app;

@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { database } from '../../firebase/config';
-import { ref, set, onValue, update } from 'firebase/database';
+import { ref, set, onValue } from 'firebase/database';
 
 // Import house images
 import gryffindorIcon from '../../assets/gryffindor.png';
@@ -57,26 +57,8 @@ const houses = [
   }
 ];
 
-// Load initial state from Firebase or localStorage
-const loadInitialState = () => {
-  const savedScores = localStorage.getItem('houseScores');
-  if (savedScores) {
-    const scores = JSON.parse(savedScores);
-    return houses.map(house => ({
-      ...house,
-      adminPoints: scores[house.id]?.adminPoints || 0,
-      totalPoints: scores[house.id]?.totalPoints || 0
-    }));
-  }
-  return houses;
-};
-
 const initialState = {
-  houses: houses.map(house => ({
-    ...house,
-    adminPoints: 0,
-    totalPoints: 0
-  })),
+  houses: houses,
   scoringHouse: null,
   currentUser: null,
   userRole: null,
@@ -123,13 +105,12 @@ const quizSlice = createSlice({
     },
     // Save current quiz points to history
     saveQuizToHistory: (state) => {
-      const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const date = new Date().toISOString().split('T')[0];
       
       if (!state.quizHistory[date]) {
         state.quizHistory[date] = {};
       }
       
-      // Add current quiz points to history
       Object.keys(state.currentQuizPoints).forEach(houseId => {
         if (!state.quizHistory[date][houseId]) {
           state.quizHistory[date][houseId] = 0;
@@ -137,10 +118,7 @@ const quizSlice = createSlice({
         state.quizHistory[date][houseId] += state.currentQuizPoints[houseId];
       });
       
-      // Save to Firebase
       saveQuizHistoryToFirebase(state.quizHistory);
-      
-      // Clear current quiz points after saving
       state.currentQuizPoints = {};
     },
     // Clear current quiz session
@@ -169,6 +147,7 @@ const quizSlice = createSlice({
     // Update from Firebase
     updateHousesFromFirebase: (state, action) => {
       const firebaseData = action.payload;
+      console.log('Updating houses from Firebase:', firebaseData);
       if (firebaseData) {
         state.houses.forEach(house => {
           if (firebaseData[house.id]) {
@@ -179,7 +158,9 @@ const quizSlice = createSlice({
       }
     },
     updateQuizHistoryFromFirebase: (state, action) => {
-      state.quizHistory = action.payload || {};
+      const firebaseData = action.payload;
+      console.log('Updating quiz history from Firebase:', firebaseData);
+      state.quizHistory = firebaseData || {};
     },
     setFirebaseConnected: (state, action) => {
       state.firebaseConnected = action.payload;
@@ -245,9 +226,11 @@ const saveQuizHistoryToFirebase = (quizHistory) => {
 // Real-time listener for house data
 export const startHouseListener = () => (dispatch) => {
   try {
+    console.log('Starting house listener...');
     const housesRef = ref(database, 'houses');
     onValue(housesRef, (snapshot) => {
       const data = snapshot.val();
+      console.log('House data received from Firebase:', data);
       dispatch(updateHousesFromFirebase(data));
       dispatch(setFirebaseConnected(true));
     }, (error) => {
@@ -263,9 +246,11 @@ export const startHouseListener = () => (dispatch) => {
 // Real-time listener for quiz history
 export const startQuizHistoryListener = () => (dispatch) => {
   try {
+    console.log('Starting quiz history listener...');
     const quizHistoryRef = ref(database, 'quizHistory');
     onValue(quizHistoryRef, (snapshot) => {
       const data = snapshot.val();
+      console.log('Quiz history received from Firebase:', data);
       dispatch(updateQuizHistoryFromFirebase(data));
     }, (error) => {
       console.error('Firebase quiz history listener error:', error);
@@ -275,6 +260,7 @@ export const startQuizHistoryListener = () => (dispatch) => {
   }
 };
 
+// Export all actions
 export const {
   setScoringHouse,
   setCurrentUser,
