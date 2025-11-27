@@ -68,7 +68,7 @@ const AdminScoring = () => {
       <div className="glass rounded-2xl p-6 mb-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-linear-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
               <span className="text-2xl text-white">👑</span>
             </div>
             <div>
