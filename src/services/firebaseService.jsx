@@ -202,12 +202,26 @@ class FirebaseService {
   }
 
   // House-specific operations
-  async updateHousePoints(houseId, pointsData) {
-    return this.updateData(`houses/${houseId}`, {
+async updateHousePoints(houseId, pointsData) {
+  try {
+    console.log('📝 Updating house points in Firebase:', houseId, pointsData);
+    
+    const result = await this.updateData(`houses/${houseId}`, {
       ...pointsData,
       lastUpdated: Date.now()
     });
+    
+    console.log('✅ House points updated successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error updating house points:', error);
+    return {
+      success: false,
+      error: error.message,
+      timestamp: Date.now()
+    };
   }
+}
 
   listenToHouses(callback) {
     return this.listenToPath('houses', callback, {

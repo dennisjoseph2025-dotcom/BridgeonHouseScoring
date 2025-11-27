@@ -30,8 +30,8 @@ const AdminScoring = () => {
       );
       const updatedHouse = updatedHouses.find(h => h.id === houseId);
       
-      // Sync with Firebase
-      await dispatch(saveHouseToFirebase(updatedHouse)).unwrap();
+      // Sync with Firebase - .unwrap() REMOVED
+      await dispatch(saveHouseToFirebase(updatedHouse));
       
       toast.success(`+1 admin point to ${house.name}`, {
         icon: '👑',
@@ -62,8 +62,8 @@ const AdminScoring = () => {
       );
       const updatedHouse = updatedHouses.find(h => h.id === houseId);
       
-      // Sync with Firebase
-      await dispatch(saveHouseToFirebase(updatedHouse)).unwrap();
+      // Sync with Firebase - .unwrap() REMOVED
+      await dispatch(saveHouseToFirebase(updatedHouse));
       
       toast.error(`-1 admin point from ${house.name}`, {
         icon: '🔻',
@@ -83,7 +83,8 @@ const AdminScoring = () => {
           <button
             onClick={async () => {
               try {
-                await dispatch(resetAllScoresFirebase()).unwrap();
+                // .unwrap() REMOVED
+                await dispatch(resetAllScoresFirebase());
                 toast.success('All scores reset!', { icon: '🔄' });
                 toast.dismiss(t.id);
               } catch (error) {

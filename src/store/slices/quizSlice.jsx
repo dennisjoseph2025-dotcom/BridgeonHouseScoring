@@ -221,19 +221,28 @@ export const startQuizHistoryListener = () => (dispatch) => {
 // Add new thunk actions for Firebase operations:
 export const saveHouseToFirebase = (house) => async () => {
   try {
+    console.log('🔄 Attempting to save house to Firebase:', house);
+    
     const result = await firebaseService.updateHousePoints(house.id, {
       adminPoints: house.adminPoints,
       totalPoints: house.totalPoints,
       name: house.name
     });
     
+    console.log('✅ Firebase save result:', result);
+    
     if (result.success) {
       return { success: true };
     } else {
+      console.error('❌ Firebase returned error:', result.error);
       throw new Error(result.error || 'Failed to save house data');
     }
   } catch (error) {
-    console.error('Error in saveHouseToFirebase:', error);
+    console.error('❌ Error in saveHouseToFirebase:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 };
