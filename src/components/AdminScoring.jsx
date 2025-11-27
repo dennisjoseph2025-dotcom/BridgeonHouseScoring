@@ -5,8 +5,8 @@ import {
   addAdminPoint, 
   subtractAdminPoint, 
   selectHouses, 
-  resetAllScoresFirebase, // Change this import
-  saveHouseToFirebase // Add this import
+  resetAllScoresFirebase,
+  saveHouseToFirebase
 } from '../store/slices/quizSlice';
 import toast from 'react-hot-toast';
 
@@ -18,12 +18,19 @@ const AdminScoring = () => {
   const handleAddAdminPoint = async (houseId) => {
     const house = houses.find(h => h.id === houseId);
     
-    // Update local state
-    dispatch(addAdminPoint(houseId));
-    
-    // Sync with Firebase
     try {
-      const updatedHouse = houses.find(h => h.id === houseId);
+      // Update local state first
+      dispatch(addAdminPoint(houseId));
+      
+      // Get the UPDATED house data from the store after the state update
+      const updatedHouses = houses.map(h => 
+        h.id === houseId 
+          ? { ...h, adminPoints: h.adminPoints + 1, totalPoints: h.totalPoints + 1 }
+          : h
+      );
+      const updatedHouse = updatedHouses.find(h => h.id === houseId);
+      
+      // Sync with Firebase
       await dispatch(saveHouseToFirebase(updatedHouse)).unwrap();
       
       toast.success(`+1 admin point to ${house.name}`, {
@@ -43,12 +50,19 @@ const AdminScoring = () => {
       return;
     }
     
-    // Update local state
-    dispatch(subtractAdminPoint(houseId));
-    
-    // Sync with Firebase
     try {
-      const updatedHouse = houses.find(h => h.id === houseId);
+      // Update local state first
+      dispatch(subtractAdminPoint(houseId));
+      
+      // Get the UPDATED house data from the store after the state update
+      const updatedHouses = houses.map(h => 
+        h.id === houseId 
+          ? { ...h, adminPoints: h.adminPoints - 1, totalPoints: h.totalPoints - 1 }
+          : h
+      );
+      const updatedHouse = updatedHouses.find(h => h.id === houseId);
+      
+      // Sync with Firebase
       await dispatch(saveHouseToFirebase(updatedHouse)).unwrap();
       
       toast.error(`-1 admin point from ${house.name}`, {
@@ -74,6 +88,7 @@ const AdminScoring = () => {
                 toast.dismiss(t.id);
               } catch (error) {
                 toast.error('Failed to reset scores');
+                console.error('Reset error:', error);
               }
             }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
@@ -139,7 +154,7 @@ const AdminScoring = () => {
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
                   <p className="text-slate-400 text-sm">Quiz Points</p>
-                  <p className="text-xl font-bold text-blue-400">{house.quizPoints}</p>
+                  <p className="text-xl font-bold text-blue-400">0</p>
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm">Admin Points</p>
