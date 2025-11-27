@@ -223,11 +223,20 @@ async updateHousePoints(houseId, pointsData) {
   }
 }
 
-  listenToHouses(callback) {
-    return this.listenToPath('houses', callback, {
-      debug: true
-    });
-  }
+listenToHouses(callback) {
+  console.log('🎯 Setting up houses listener...');
+  
+  return this.listenToPath('houses', (data, metadata) => {
+    console.log('📡 Houses data received:', data);
+    callback(data, null);
+  }, {
+    errorCallback: (error) => {
+      console.error('❌ Houses listener error:', error);
+      callback(null, error);
+    },
+    debug: true
+  });
+}
 
   listenToQuizHistory(callback) {
     return this.listenToPath('quizHistory', callback, {

@@ -15,17 +15,19 @@ const AdminScoring = () => {
   const navigate = useNavigate();
   const houses = useSelector(selectHouses);
 
-  const handleAddAdminPoint = async (houseId) => {
+  const handleAddPoints = async (houseId, points) => {
     const house = houses.find(h => h.id === houseId);
     
     try {
-      // Update local state first
-      dispatch(addAdminPoint(houseId));
+      // Update local state for each point
+      for (let i = 0; i < points; i++) {
+        dispatch(addAdminPoint(houseId));
+      }
       
       // Get the UPDATED house data from the store after the state update
       const updatedHouses = houses.map(h => 
         h.id === houseId 
-          ? { ...h, adminPoints: h.adminPoints + 1, totalPoints: h.totalPoints + 1 }
+          ? { ...h, adminPoints: h.adminPoints + points }
           : h
       );
       const updatedHouse = updatedHouses.find(h => h.id === houseId);
@@ -33,7 +35,7 @@ const AdminScoring = () => {
       // Sync with Firebase - .unwrap() REMOVED
       await dispatch(saveHouseToFirebase(updatedHouse));
       
-      toast.success(`+1 admin point to ${house.name}`, {
+      toast.success(`+${points} points to ${house.name}`, {
         icon: '👑',
         duration: 1500
       });
@@ -43,21 +45,21 @@ const AdminScoring = () => {
     }
   };
 
-  const handleSubtractAdminPoint = async (houseId) => {
+  const handleSubtractPoint = async (houseId) => {
     const house = houses.find(h => h.id === houseId);
     if (house.adminPoints === 0) {
-      toast.error(`${house.name} has no admin points to subtract`);
+      toast.error(`${house.name} has no points to subtract`);
       return;
     }
     
     try {
-      // Update local state first
+      // Update local state
       dispatch(subtractAdminPoint(houseId));
       
       // Get the UPDATED house data from the store after the state update
       const updatedHouses = houses.map(h => 
         h.id === houseId 
-          ? { ...h, adminPoints: h.adminPoints - 1, totalPoints: h.totalPoints - 1 }
+          ? { ...h, adminPoints: h.adminPoints - 1 }
           : h
       );
       const updatedHouse = updatedHouses.find(h => h.id === houseId);
@@ -65,7 +67,7 @@ const AdminScoring = () => {
       // Sync with Firebase - .unwrap() REMOVED
       await dispatch(saveHouseToFirebase(updatedHouse));
       
-      toast.error(`-1 admin point from ${house.name}`, {
+      toast.error(`-1 point from ${house.name}`, {
         icon: '🔻',
         duration: 1500
       });
@@ -75,10 +77,34 @@ const AdminScoring = () => {
     }
   };
 
+  const handleSaveScores = async () => {
+    try {
+      // Update total points for all houses and reset admin points
+      const savePromises = houses.map(house => {
+        const newTotalPoints = house.totalPoints + house.adminPoints;
+        return dispatch(saveHouseToFirebase({
+          ...house,
+          adminPoints: 0,
+          totalPoints: newTotalPoints
+        }));
+      });
+
+      await Promise.all(savePromises);
+      
+      toast.success('Scores saved successfully! Points added to totals and reset for next session.', {
+        icon: '💾',
+        duration: 3000
+      });
+    } catch (error) {
+      toast.error('Failed to save scores');
+      console.error('Error saving scores:', error);
+    }
+  };
+
   const handleResetScores = () => {
     toast((t) => (
       <div className="text-center p-2">
-        <p className="font-semibold text-gray-800 mb-4">Reset all scores to zero?</p>
+        <p className="font-semibold text-red-500 mb-4">Reset all scores to zero?</p>
         <div className="flex space-x-3 justify-center">
           <button
             onClick={async () => {
@@ -107,6 +133,12 @@ const AdminScoring = () => {
     ));
   };
 
+  // Calculate total points currently given (sum of all adminPoints)
+  const totalPointsGiven = houses.reduce((sum, house) => sum + house.adminPoints, 0);
+
+  // Point increment options - only +5, +3, +1
+  const pointOptions = [5, 3, 1];
+
   return (
     <div className="max-w-7xl mx-auto fade-in">
       {/* Header */}
@@ -119,12 +151,31 @@ const AdminScoring = () => {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Admin Scoring Panel</h1>
               <p className="text-slate-400">
-                Award total house points for overall performance
+                Award house points for overall performance
               </p>
+              {totalPointsGiven > 0 && (
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-green-400 text-sm font-medium">
+                    {totalPointsGiven} points pending save
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           
           <div className="flex space-x-3">
+            <button
+              onClick={handleSaveScores}
+              disabled={totalPointsGiven === 0}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                totalPointsGiven === 0
+                  ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
+              }`}
+            >
+              💾 Save Scores
+            </button>
             <button
               onClick={handleResetScores}
               className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-all duration-200"
@@ -152,14 +203,14 @@ const AdminScoring = () => {
               </h3>
               
               {/* Points Display */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-slate-400 text-sm">Quiz Points</p>
-                  <p className="text-xl font-bold text-blue-400">0</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Admin Points</p>
-                  <p className="text-xl font-bold text-purple-400">{house.adminPoints}</p>
+                  <p className="text-slate-400 text-sm">Points Currently Given</p>
+                  <p className={`text-xl font-bold ${
+                    house.adminPoints > 0 ? 'text-purple-400' : 'text-slate-500'
+                  }`}>
+                    {house.adminPoints}
+                  </p>
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm">Total</p>
@@ -170,29 +221,52 @@ const AdminScoring = () => {
 
             {/* Admin Controls */}
             <div className="space-y-3">
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleSubtractAdminPoint(house.id)}
-                  disabled={house.adminPoints === 0}
-                  className={`flex-1 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                    house.adminPoints === 0
-                      ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                      : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
-                  }`}
-                >
-                  -1 Admin
-                </button>
-                <button
-                  onClick={() => handleAddAdminPoint(house.id)}
-                  className="flex-1 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  +1 Admin
-                </button>
+              {/* Add Points Buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                {pointOptions.map(points => (
+                  <button
+                    key={`add-${points}`}
+                    onClick={() => handleAddPoints(house.id, points)}
+                    className="py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    +{points}
+                  </button>
+                ))}
               </div>
+
+              {/* Subtract Point Button - Only -1 */}
+              <button
+                onClick={() => handleSubtractPoint(house.id)}
+                disabled={house.adminPoints === 0}
+                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  house.adminPoints === 0
+                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
+                }`}
+              >
+                -1 Point
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Save Instructions */}
+      {totalPointsGiven > 0 && (
+        <div className="glass rounded-2xl p-6 mt-8 text-center border border-green-500/20">
+          <div className="flex items-center justify-center space-x-3">
+            <span className="text-green-400 text-2xl">💡</span>
+            <div>
+              <p className="text-green-400 font-semibold">
+                Don't forget to save your scores!
+              </p>
+              <p className="text-slate-400 text-sm mt-1">
+                Click "Save Scores" to add pending points to totals and reset for the next session
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

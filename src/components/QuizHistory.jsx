@@ -42,8 +42,8 @@ const QuizHistory = () => {
 
     toast((t) => (
       <div className="text-center p-2">
-        <p className="font-semibold text-gray-800 mb-4">Delete quiz history for {formatDate(date)}?</p>
-        <p className="text-sm text-gray-600 mb-4">This action cannot be undone.</p>
+        <p className="font-semibold text-red-500 mb-4">Delete quiz history for {formatDate(date)}?</p>
+        <p className="text-sm text-gray-400 mb-4">This action cannot be undone.</p>
         <div className="flex space-x-3 justify-center">
           <button
             onClick={async () => {
@@ -81,8 +81,8 @@ const QuizHistory = () => {
 
     toast((t) => (
       <div className="text-center p-2">
-        <p className="font-semibold text-gray-800 mb-4">Clear all quiz history?</p>
-        <p className="text-sm text-gray-600 mb-4">This will delete all quiz data and cannot be undone.</p>
+        <p className="font-semibold text-red-500 mb-4">Clear all quiz history?</p>
+        <p className="text-sm text-gray-400 mb-4">This will delete all quiz data and cannot be undone.</p>
         <div className="flex space-x-3 justify-center">
           <button
             onClick={async () => {

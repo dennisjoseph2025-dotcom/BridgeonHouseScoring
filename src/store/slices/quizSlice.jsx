@@ -196,11 +196,15 @@ const quizSlice = createSlice({
 
 // Update the listeners to use the service:
 export const startHouseListener = () => (dispatch) => {
+  console.log('🔄 Starting house listener...');
+  
   const unsubscribe = firebaseService.listenToHouses((data, error) => {
     if (error) {
+      console.error('❌ House listener error:', error);
       dispatch(setFirebaseConnected(false));
       return;
     }
+    console.log('📡 House data received from Firebase:', data);
     dispatch(updateHousesFromFirebase(data));
     dispatch(setFirebaseConnected(true));
   });
@@ -209,15 +213,19 @@ export const startHouseListener = () => (dispatch) => {
 };
 
 export const startQuizHistoryListener = () => (dispatch) => {
+  console.log('🔄 Starting quiz history listener...');
+  
   const unsubscribe = firebaseService.listenToQuizHistory((data, error) => {
-    if (!error && data) {
-      dispatch(updateQuizHistoryFromFirebase(data));
+    if (error) {
+      console.error('❌ Quiz history listener error:', error);
+      return;
     }
+    console.log('📡 Quiz history received from Firebase:', data);
+    dispatch(updateQuizHistoryFromFirebase(data));
   });
 
   return unsubscribe;
 };
-
 // Add new thunk actions for Firebase operations:
 export const saveHouseToFirebase = (house) => async () => {
   try {

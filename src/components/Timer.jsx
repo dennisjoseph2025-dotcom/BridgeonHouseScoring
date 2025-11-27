@@ -56,6 +56,7 @@ const Timer = () => {
     if (customTime > 0) {
       dispatch(setTimer(customTime));
       setInitialTime(customTime);
+      setCustomTime(0); // Clear the input after setting
     }
   };
 
@@ -63,13 +64,11 @@ const Timer = () => {
     if (time > 0) {
       dispatch(setTimer(time));
       setInitialTime(time);
-      if (!timer.isRunning) {
-        dispatch(startTimer());
-      }
+      // Removed the auto-start functionality
     }
   };
 
-  const quickTimeButtons = [60, 120, 180,240, 300]; // 30s, 1m, 5m, 10m, 15m
+  const quickTimeButtons = [60, 120, 180, 240, 300]; // 1m, 2m, 3m, 4m, 5m
 
   return (
     <div className="max-w-2xl mx-auto fade-in">
@@ -89,7 +88,8 @@ const Timer = () => {
           </div>
           <div className="text-slate-400 text-lg">
             {timer.isRunning ? 'Countdown Running' : 
-             timer.time === 0 ? 'Time\'s Up!' : 'Timer Ready'}
+             timer.time === 0 ? 'Time\'s Up!' : 
+             initialTime > 0 ? 'Timer Set - Ready to Start' : 'Set Timer Duration'}
           </div>
           {initialTime > 0 && (
             <div className="text-slate-500 text-sm mt-2">
@@ -99,7 +99,7 @@ const Timer = () => {
         </div>
 
         {/* Progress Bar */}
-        {initialTime > 0 && (
+        {initialTime > 0 && timer.time > 0 && (
           <div className="mb-8">
             <div className="w-full bg-slate-700 rounded-full h-2">
               <div 
@@ -119,7 +119,7 @@ const Timer = () => {
               timer.isRunning
                 ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                 : initialTime === 0 && timer.time === 0
-                ? 'bg-gray-500 cursor-not-allowed'
+                ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                 : 'bg-green-500 hover:bg-green-600 text-white'
             } shadow-lg hover:shadow-xl`}
           >
@@ -141,7 +141,11 @@ const Timer = () => {
               <button
                 key={time}
                 onClick={() => handleQuickTimeSet(time)}
-                className="py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                className={`py-3 rounded-lg font-medium transition-colors ${
+                  initialTime === time 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-slate-700 hover:bg-slate-600 text-white'
+                }`}
               >
                 {formatTime(time)}
               </button>
@@ -157,7 +161,7 @@ const Timer = () => {
               type="number"
               min="1"
               value={customTime}
-              onChange={(e) => setCustomTime(parseInt(e.target.value))}
+              onChange={(e) => setCustomTime(parseInt(e.target.value) || 0)}
               placeholder="Seconds"
               className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -166,7 +170,7 @@ const Timer = () => {
               disabled={customTime <= 0}
               className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
                 customTime <= 0 
-                  ? 'bg-gray-500 cursor-not-allowed' 
+                  ? 'bg-gray-500 cursor-not-allowed text-gray-300' 
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
               }`}
             >
@@ -174,6 +178,16 @@ const Timer = () => {
             </button>
           </div>
         </div>
+
+        {/* Status Message */}
+        {initialTime > 0 && !timer.isRunning && timer.time === initialTime && (
+          <div className="mt-6 text-center">
+            <div className="inline-flex items-center space-x-2 bg-blue-500/20 text-blue-400 px-4 py-2 rounded-full text-sm">
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+              <span>Timer set for {formatTime(initialTime)} - Click Start to begin</span>
+            </div>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-center space-x-4 mt-8">

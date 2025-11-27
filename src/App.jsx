@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { 
   selectCurrentUser, 
   selectUserRole, 
-  setFirebaseConnected 
+  setFirebaseConnected ,startHouseListener, startQuizHistoryListener
 } from './store/slices/quizSlice';
 import { firebaseService } from './services/firebaseService';
 import './index.css';
@@ -16,7 +16,6 @@ import QuizHistory from './components/QuizHistory';
 import AdminScoring from './components/AdminScoring';
 import Timer from './components/Timer';
 import Leaderboard from './components/Leaderboard';
-// import FirebaseTest from './components/FirebaseTest';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -132,21 +131,13 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Start Firebase connection monitoring
-    const connectionUnsubscribe = firebaseService.startConnectionMonitor((status) => {
-      dispatch(setFirebaseConnected(status.connected));
-    });
-
-    // Cleanup on unmount
-    return () => {
-      connectionUnsubscribe();
-      firebaseService.cleanupAllListeners();
-    };
+    // Start Firebase listeners
+    dispatch(startHouseListener());
+    dispatch(startQuizHistoryListener());
   }, [dispatch]);
 
   return (
     <Router>
-      {/* <FirebaseTest /> */}
       <AppContent />
     </Router>
   );
