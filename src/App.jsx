@@ -39,7 +39,7 @@ const NotFound = () => {
   const userRole = useSelector(selectUserRole);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="glass rounded-2xl p-12 text-center max-w-md">
         <div className="w-20 h-20 bg-red-500/20 rounded-2xl mx-auto mb-6 flex items-center justify-center">
           <span className="text-3xl">🔍</span>
