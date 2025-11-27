@@ -1,175 +1,236 @@
-import { ref, set, onValue, update, get, off, push } from 'firebase/database';
 import { database } from '../firebase/config';
+import { ref, set, onValue, off, get, update, remove } from 'firebase/database';
 
 class FirebaseService {
-  // House operations
-  async updateHouse(houseId, houseData) {
+  constructor() {
+    this.connectionStatus = 'disconnected';
+    this.listeners = new Map();
+    this.connectionCallbacks = [];
+  }
+
+  // Connection testing methods
+  async testConnection() {
     try {
-      const houseRef = ref(database, `houses/${houseId}`);
-      const data = {
-        ...houseData,
-        lastUpdated: Date.now(),
-        updatedBy: houseData.updatedBy || 'system'
+      const testRef = ref(database, 'connectionTest');
+      
+      await set(testRef, {
+        message: 'Bridgeon House Cup connection test',
+        timestamp: Date.now(),
+        project: 'bridgeon-house-scoring',
+        status: 'active'
+      });
+
+      return {
+        success: true,
+        message: '✅ Write successful - checking real-time updates...',
+        timestamp: Date.now()
       };
-      await set(houseRef, data);
-      console.log(`✅ House ${houseId} updated successfully`);
-      return { success: true, data };
     } catch (error) {
-      console.error(`❌ Error updating house ${houseId}:`, error);
-      throw error;
+      return {
+        success: false,
+        message: `❌ Write error: ${error.message}`,
+        error: error
+      };
     }
   }
 
-  async getHouse(houseId) {
-    try {
-      const houseRef = ref(database, `houses/${houseId}`);
-      const snapshot = await get(houseRef);
-      return snapshot.exists() ? snapshot.val() : null;
-    } catch (error) {
-      console.error(`❌ Error getting house ${houseId}:`, error);
-      throw error;
-    }
+  // Real-time connection monitoring
+  startConnectionMonitor(callback) {
+    const connectionRef = ref(database, '.info/connected');
+    
+    const unsubscribe = onValue(connectionRef, (snapshot) => {
+      const connected = snapshot.val();
+      this.connectionStatus = connected ? 'connected' : 'disconnected';
+      
+      const statusData = {
+        connected,
+        status: this.connectionStatus,
+        timestamp: Date.now()
+      };
+
+      this.connectionCallbacks.forEach(cb => cb(statusData));
+      
+      if (callback) {
+        callback(statusData);
+      }
+    });
+
+    return unsubscribe;
   }
 
-  async getAllHouses() {
-    try {
-      const housesRef = ref(database, 'houses');
-      const snapshot = await get(housesRef);
-      return snapshot.exists() ? snapshot.val() : {};
-    } catch (error) {
-      console.error('❌ Error getting all houses:', error);
-      throw error;
-    }
+  // Register connection status callbacks
+  onConnectionChange(callback) {
+    this.connectionCallbacks.push(callback);
+    
+    return () => {
+      const index = this.connectionCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.connectionCallbacks.splice(index, 1);
+      }
+    };
   }
 
-  // Quiz History operations
-  async saveQuizHistory(quizHistory) {
-    try {
-      const quizHistoryRef = ref(database, 'quizHistory');
-      await set(quizHistoryRef, quizHistory);
-      console.log('✅ Quiz history saved successfully');
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Error saving quiz history:', error);
-      throw error;
-    }
-  }
-
-  async getQuizHistory() {
-    try {
-      const quizHistoryRef = ref(database, 'quizHistory');
-      const snapshot = await get(quizHistoryRef);
-      return snapshot.exists() ? snapshot.val() : {};
-    } catch (error) {
-      console.error('❌ Error getting quiz history:', error);
-      throw error;
-    }
-  }
-
-  // Real-time listeners with cleanup
-  listenToHouses(callback) {
-    const housesRef = ref(database, 'houses');
+  // Enhanced real-time listener
+  listenToPath(path, callback, options = {}) {
+    const pathRef = ref(database, path);
     
     const handleData = (snapshot) => {
       const data = snapshot.val();
-      console.log('🏠 Houses data updated:', data);
-      callback(data);
+      
+      if (options.debug) {
+        console.log(`📡 Firebase update for ${path}:`, data);
+      }
+      
+      callback(data, {
+        path,
+        timestamp: Date.now(),
+        exists: snapshot.exists()
+      });
     };
 
     const handleError = (error) => {
-      console.error('❌ Houses listener error:', error);
-      callback(null, error);
+      console.error(`❌ Firebase listener error for ${path}:`, error);
+      
+      if (options.errorCallback) {
+        options.errorCallback(error, { path, timestamp: Date.now() });
+      }
     };
 
-    onValue(housesRef, handleData, handleError);
+    const listenerId = `listener_${path}_${Date.now()}`;
+    const unsubscribe = onValue(pathRef, handleData, handleError);
+    
+    this.listeners.set(listenerId, { unsubscribe, path });
+    
+    return () => {
+      this.removeListener(listenerId);
+    };
+  }
 
-    // Return unsubscribe function
-    return () => off(housesRef, 'value', handleData);
+  // Remove specific listener
+  removeListener(listenerId) {
+    const listener = this.listeners.get(listenerId);
+    if (listener) {
+      listener.unsubscribe();
+      this.listeners.delete(listenerId);
+    }
+  }
+
+  // Cleanup all listeners
+  cleanupAllListeners() {
+    this.listeners.forEach((listener) => {
+      listener.unsubscribe();
+    });
+    this.listeners.clear();
+  }
+
+  // Data operations
+  async writeData(path, data) {
+    try {
+      const dataRef = ref(database, path);
+      const dataWithMeta = {
+        ...data,
+        _lastUpdated: Date.now()
+      };
+      
+      await set(dataRef, dataWithMeta);
+      
+      return {
+        success: true,
+        path,
+        data: dataWithMeta,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error(`❌ Error writing to ${path}:`, error);
+      return {
+        success: false,
+        path,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  async readData(path) {
+    try {
+      const dataRef = ref(database, path);
+      const snapshot = await get(dataRef);
+      
+      return {
+        success: true,
+        data: snapshot.val(),
+        exists: snapshot.exists(),
+        path,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error(`❌ Error reading from ${path}:`, error);
+      return {
+        success: false,
+        path,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  async updateData(path, updates) {
+    try {
+      const dataRef = ref(database, path);
+      const updatesWithMeta = {
+        ...updates,
+        _lastUpdated: Date.now()
+      };
+      
+      await update(dataRef, updatesWithMeta);
+      
+      return {
+        success: true,
+        path,
+        updates: updatesWithMeta,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error(`❌ Error updating ${path}:`, error);
+      return {
+        success: false,
+        path,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // House-specific operations
+  async updateHousePoints(houseId, pointsData) {
+    return this.updateData(`houses/${houseId}`, {
+      ...pointsData,
+      lastUpdated: Date.now()
+    });
+  }
+
+  listenToHouses(callback) {
+    return this.listenToPath('houses', callback, {
+      debug: true
+    });
   }
 
   listenToQuizHistory(callback) {
-    const quizHistoryRef = ref(database, 'quizHistory');
-    
-    const handleData = (snapshot) => {
-      const data = snapshot.val();
-      console.log('📊 Quiz history updated:', data);
-      callback(data);
-    };
-
-    const handleError = (error) => {
-      console.error('❌ Quiz history listener error:', error);
-      callback(null, error);
-    };
-
-    onValue(quizHistoryRef, handleData, handleError);
-
-    // Return unsubscribe function
-    return () => off(quizHistoryRef, 'value', handleData);
+    return this.listenToPath('quizHistory', callback, {
+      debug: true
+    });
   }
 
-  // Batch operations
-  async updateMultipleHouses(housesData) {
-    try {
-      const updates = {};
-      const timestamp = Date.now();
-
-      Object.keys(housesData).forEach(houseId => {
-        updates[`houses/${houseId}`] = {
-          ...housesData[houseId],
-          lastUpdated: timestamp,
-          batchUpdate: true
-        };
-      });
-
-      await update(ref(database), updates);
-      console.log(`✅ Updated ${Object.keys(housesData).length} houses successfully`);
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Error updating multiple houses:', error);
-      throw error;
-    }
+  // Utility methods
+  getConnectionStatus() {
+    return this.connectionStatus;
   }
 
-  // Initialize default data
-  async initializeDefaultData() {
-    try {
-      const housesSnapshot = await get(ref(database, 'houses'));
-      if (!housesSnapshot.exists()) {
-        console.log('🚀 Initializing default houses data...');
-        
-        const defaultHouses = {
-          gryffindor: { name: 'Gryffindor', adminPoints: 0, totalPoints: 0, lastUpdated: Date.now() },
-          slytherin: { name: 'Slytherin', adminPoints: 0, totalPoints: 0, lastUpdated: Date.now() },
-          hufflepuff: { name: 'Hufflepuff', adminPoints: 0, totalPoints: 0, lastUpdated: Date.now() },
-          ravenclaw: { name: 'Ravenclaw', adminPoints: 0, totalPoints: 0, lastUpdated: Date.now() },
-          media: { name: 'Media Team', adminPoints: 0, totalPoints: 0, lastUpdated: Date.now() }
-        };
-
-        await this.updateMultipleHouses(defaultHouses);
-      }
-    } catch (error) {
-      console.error('❌ Error initializing default data:', error);
-      throw error;
-    }
-  }
-
-  // Analytics and logging
-  async logAction(action, details) {
-    try {
-      const logsRef = ref(database, 'logs');
-      const newLogRef = push(logsRef);
-      await set(newLogRef, {
-        action,
-        details,
-        timestamp: Date.now(),
-        user: details.user || 'unknown'
-      });
-    } catch (error) {
-      console.error('❌ Error logging action:', error);
-      // Don't throw error for logging failures
-    }
+  getActiveListeners() {
+    return Array.from(this.listeners.keys());
   }
 }
 
+// Create and export singleton instance
 export const firebaseService = new FirebaseService();
 export default FirebaseService;

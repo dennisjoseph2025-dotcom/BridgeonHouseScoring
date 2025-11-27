@@ -1,7 +1,12 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectCurrentUser, selectUserRole, startHouseListener, startQuizHistoryListener } from './store/slices/quizSlice';
+import { 
+  selectCurrentUser, 
+  selectUserRole, 
+  setFirebaseConnected 
+} from './store/slices/quizSlice';
+import { firebaseService } from './services/firebaseService'; // Add this import
 import './index.css';
 import Layout from './components/Layout';
 import Login from './components/Login';
@@ -127,14 +132,21 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Start Firebase listeners
-    dispatch(startHouseListener());
-    dispatch(startQuizHistoryListener());
+    // Start Firebase connection monitoring
+    const connectionUnsubscribe = firebaseService.startConnectionMonitor((status) => {
+      dispatch(setFirebaseConnected(status.connected));
+    });
+
+    // Cleanup on unmount
+    return () => {
+      connectionUnsubscribe();
+      firebaseService.cleanupAllListeners();
+    };
   }, [dispatch]);
 
   return (
- <Router>
-      <FirebaseTest /> {/* Remove this after testing */}
+    <Router>
+      <FirebaseTest />
       <AppContent />
     </Router>
   );

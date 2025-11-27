@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { database } from '../../firebase/config';
-import { ref, set, onValue } from 'firebase/database';
+import { firebaseService } from '../../services/firebaseService';
 
 // Import house images
 import gryffindorIcon from '../../assets/gryffindor.png';
@@ -118,21 +117,21 @@ const quizSlice = createSlice({
         state.quizHistory[date][houseId] += state.currentQuizPoints[houseId];
       });
       
-      saveQuizHistoryToFirebase(state.quizHistory);
+      // Remove the direct Firebase call - will be handled by thunk
       state.currentQuizPoints = {};
     },
     // Clear current quiz session
     clearCurrentQuiz: (state) => {
       state.currentQuizPoints = {};
     },
-    // Admin Scoring
+    // Admin Scoring - Updated to remove direct Firebase calls
     addAdminPoint: (state, action) => {
       const houseId = action.payload;
       const house = state.houses.find(h => h.id === houseId);
       if (house) {
         house.adminPoints += 1;
         house.totalPoints = house.adminPoints;
-        updateHouseInFirebase(house);
+        // Remove the updateHouseInFirebase call here
       }
     },
     subtractAdminPoint: (state, action) => {
@@ -141,7 +140,7 @@ const quizSlice = createSlice({
       if (house && house.adminPoints > 0) {
         house.adminPoints -= 1;
         house.totalPoints = house.adminPoints;
-        updateHouseInFirebase(house);
+        // Remove the updateHouseInFirebase call here
       }
     },
     // Update from Firebase
@@ -188,75 +187,150 @@ const quizSlice = createSlice({
       state.timer.time = action.payload;
       state.timer.initialTime = action.payload;
     },
+    // Updated to remove direct Firebase calls
     resetAllScores: (state) => {
       state.houses.forEach(house => {
         house.adminPoints = 0;
         house.totalPoints = 0;
-        updateHouseInFirebase(house);
+        // Remove the updateHouseInFirebase call here
       });
     }
   }
 });
 
-// Helper function to update house in Firebase
-const updateHouseInFirebase = (house) => {
-  try {
-    const houseRef = ref(database, `houses/${house.id}`);
-    set(houseRef, {
-      adminPoints: house.adminPoints,
-      totalPoints: house.totalPoints,
-      name: house.name,
-      lastUpdated: Date.now()
-    });
-  } catch (error) {
-    console.error('Error updating house in Firebase:', error);
-  }
-};
+// Remove the old helper functions (updateHouseInFirebase, saveQuizHistoryToFirebase)
 
-// Helper function to save quiz history to Firebase
-const saveQuizHistoryToFirebase = (quizHistory) => {
-  try {
-    const quizHistoryRef = ref(database, 'quizHistory');
-    set(quizHistoryRef, quizHistory);
-  } catch (error) {
-    console.error('Error saving quiz history to Firebase:', error);
-  }
-};
-
-// Real-time listener for house data
+// Update the listeners to use the service:
 export const startHouseListener = () => (dispatch) => {
-  try {
-    console.log('Starting house listener...');
-    const housesRef = ref(database, 'houses');
-    onValue(housesRef, (snapshot) => {
-      const data = snapshot.val();
-      console.log('House data received from Firebase:', data);
-      dispatch(updateHousesFromFirebase(data));
-      dispatch(setFirebaseConnected(true));
-    }, (error) => {
-      console.error('Firebase houses listener error:', error);
+  const unsubscribe = firebaseService.listenToHouses((data, error) => {
+    if (error) {
       dispatch(setFirebaseConnected(false));
+      return;
+    }
+    dispatch(updateHousesFromFirebase(data));
+    dispatch(setFirebaseConnected(true));
+  });
+
+  return unsubscribe;
+};
+
+export const startQuizHistoryListener = () => (dispatch) => {
+  const unsubscribe = firebaseService.listenToQuizHistory((data, error) => {
+    if (!error && data) {
+      dispatch(updateQuizHistoryFromFirebase(data));
+    }
+  });
+
+  return unsubscribe;
+};
+
+// Add new thunk actions for Firebase operations:
+export const saveHouseToFirebase = (house) => async () => {
+  return await firebaseService.updateHousePoints(house.id, {
+    adminPoints: house.adminPoints,
+    totalPoints: house.totalPoints,
+    name: house.name
+  });
+};
+
+export const saveQuizHistoryToFirebase = (quizHistory) => async () => {
+  return await firebaseService.writeData('quizHistory', quizHistory);
+};
+
+export const saveCurrentQuizToFirebase = () => async (dispatch, getState) => {
+  try {
+    const state = getState().quiz;
+    
+    // Save quiz history first
+    const date = new Date().toISOString().split('T')[0];
+    const currentHistory = { ...state.quizHistory };
+    
+    if (!currentHistory[date]) {
+      currentHistory[date] = {};
+    }
+    
+    Object.keys(state.currentQuizPoints).forEach(houseId => {
+      if (!currentHistory[date][houseId]) {
+        currentHistory[date][houseId] = 0;
+      }
+      currentHistory[date][houseId] += state.currentQuizPoints[houseId];
     });
+    
+    // Save to Firebase
+    await firebaseService.writeData('quizHistory', currentHistory);
+    
+    // Update local state
+    dispatch(saveQuizToHistory());
+    
+    return { success: true };
   } catch (error) {
-    console.error('Error starting house listener:', error);
-    dispatch(setFirebaseConnected(false));
+    console.error('Error saving quiz to Firebase:', error);
+    return { success: false, error: error.message };
   }
 };
 
-// Real-time listener for quiz history
-export const startQuizHistoryListener = () => (dispatch) => {
+export const resetAllScoresFirebase = () => async (dispatch) => {
   try {
-    console.log('Starting quiz history listener...');
-    const quizHistoryRef = ref(database, 'quizHistory');
-    onValue(quizHistoryRef, (snapshot) => {
-      const data = snapshot.val();
-      console.log('Quiz history received from Firebase:', data);
-      dispatch(updateQuizHistoryFromFirebase(data));
-    }, (error) => {
-      console.error('Firebase quiz history listener error:', error);
-    });
+    // Reset all houses in Firebase
+    const houses = [
+      'gryffindor', 'slytherin', 'hufflepuff', 'ravenclaw', 'media'
+    ];
+    
+    const resetPromises = houses.map(houseId => 
+      firebaseService.updateHousePoints(houseId, {
+        adminPoints: 0,
+        totalPoints: 0,
+        name: houseId.charAt(0).toUpperCase() + houseId.slice(1)
+      })
+    );
+    
+    await Promise.all(resetPromises);
+    
+    // Reset quiz history
+    await firebaseService.writeData('quizHistory', {});
+    
+    // Update local state
+    dispatch(resetAllScores());
+    
+    return { success: true };
   } catch (error) {
-    console.error('Error starting quiz history listener:', error);
+    console.error('Error resetting scores in Firebase:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Initialize Firebase data
+export const initializeFirebaseData = () => async () => {
+  try {
+    // Check if houses data exists, if not initialize
+    const housesResult = await firebaseService.readData('houses');
+    
+    if (!housesResult.exists) {
+      console.log('Initializing houses data in Firebase...');
+      
+      const initPromises = houses.map(house =>
+        firebaseService.updateHousePoints(house.id, {
+          adminPoints: 0,
+          totalPoints: 0,
+          name: house.name
+        })
+      );
+      
+      await Promise.all(initPromises);
+    }
+    
+    // Check if quiz history exists, if not initialize
+    const quizHistoryResult = await firebaseService.readData('quizHistory');
+    
+    if (!quizHistoryResult.exists) {
+      console.log('Initializing quiz history in Firebase...');
+      await firebaseService.writeData('quizHistory', {});
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error initializing Firebase data:', error);
+    return { success: false, error: error.message };
   }
 };
 

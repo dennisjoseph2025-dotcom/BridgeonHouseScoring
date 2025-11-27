@@ -5,9 +5,9 @@ import {
   addAdminPoint, 
   subtractAdminPoint, 
   selectHouses, 
-  resetAllScores 
+  resetAllScoresFirebase, // Change this import
+  saveHouseToFirebase // Add this import
 } from '../store/slices/quizSlice';
-
 import toast from 'react-hot-toast';
 
 const AdminScoring = () => {
@@ -15,26 +15,50 @@ const AdminScoring = () => {
   const navigate = useNavigate();
   const houses = useSelector(selectHouses);
 
-  const handleAddAdminPoint = (houseId) => {
+  const handleAddAdminPoint = async (houseId) => {
     const house = houses.find(h => h.id === houseId);
+    
+    // Update local state
     dispatch(addAdminPoint(houseId));
-    toast.success(`+1 admin point to ${house.name}`, {
-      icon: '👑',
-      duration: 1500
-    });
+    
+    // Sync with Firebase
+    try {
+      const updatedHouse = houses.find(h => h.id === houseId);
+      await dispatch(saveHouseToFirebase(updatedHouse)).unwrap();
+      
+      toast.success(`+1 admin point to ${house.name}`, {
+        icon: '👑',
+        duration: 1500
+      });
+    } catch (error) {
+      toast.error(`Failed to save points for ${house.name}`);
+      console.error('Error saving to Firebase:', error);
+    }
   };
 
-  const handleSubtractAdminPoint = (houseId) => {
+  const handleSubtractAdminPoint = async (houseId) => {
     const house = houses.find(h => h.id === houseId);
     if (house.adminPoints === 0) {
       toast.error(`${house.name} has no admin points to subtract`);
       return;
     }
+    
+    // Update local state
     dispatch(subtractAdminPoint(houseId));
-    toast.error(`-1 admin point from ${house.name}`, {
-      icon: '🔻',
-      duration: 1500
-    });
+    
+    // Sync with Firebase
+    try {
+      const updatedHouse = houses.find(h => h.id === houseId);
+      await dispatch(saveHouseToFirebase(updatedHouse)).unwrap();
+      
+      toast.error(`-1 admin point from ${house.name}`, {
+        icon: '🔻',
+        duration: 1500
+      });
+    } catch (error) {
+      toast.error(`Failed to save points for ${house.name}`);
+      console.error('Error saving to Firebase:', error);
+    }
   };
 
   const handleResetScores = () => {
@@ -43,10 +67,14 @@ const AdminScoring = () => {
         <p className="font-semibold text-gray-800 mb-4">Reset all scores to zero?</p>
         <div className="flex space-x-3 justify-center">
           <button
-            onClick={() => {
-              dispatch(resetAllScores());
-              toast.success('All scores reset!', { icon: '🔄' });
-              toast.dismiss(t.id);
+            onClick={async () => {
+              try {
+                await dispatch(resetAllScoresFirebase()).unwrap();
+                toast.success('All scores reset!', { icon: '🔄' });
+                toast.dismiss(t.id);
+              } catch (error) {
+                toast.error('Failed to reset scores');
+              }
             }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
           >
