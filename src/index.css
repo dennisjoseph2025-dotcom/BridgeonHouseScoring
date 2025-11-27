@@ -1,0 +1,100 @@
+@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --gryffindor: #740001;
+  --slytherin: #1A472A;
+  --hufflepuff: #FFDB00;
+  --ravenclaw: #1f48cd;
+  --media: #bf661e;
+  
+  --primary: #3B82F6;
+  --secondary: #6366F1;
+  --background: #0F172A;
+  --surface: #1E293B;
+  --text: #F8FAFC;
+  --text-secondary: #94A3B8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Custom utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* House color utilities */
+.bg-gryffindor { background: linear-gradient(135deg, var(--gryffindor), #AE0001); }
+.bg-slytherin { background: linear-gradient(135deg, var(--slytherin), #2A623D); }
+.bg-hufflepuff { background: linear-gradient(135deg, var(--hufflepuff), #FFED86); }
+.bg-ravenclaw { background: linear-gradient(135deg, var(--ravenclaw), #222F5B); }
+.bg-media { background: linear-gradient(135deg, var(--media), #4A7BC1); }
+
+.text-gryffindor { color: var(--gryffindor); }
+.text-slytherin { color: var(--slytherin); }
+.text-hufflepuff { color: var(--hufflepuff); }
+.text-ravenclaw { color: var(--ravenclaw); }
+.text-media { color: var(--media); }
+
+.border-gryffindor { border-color: var(--gryffindor); }
+.border-slytherin { border-color: var(--slytherin); }
+.border-hufflepuff { border-color: var(--hufflepuff); }
+.border-ravenclaw { border-color: var(--ravenclaw); }
+.border-media { border-color: var(--media); }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary);
+}
