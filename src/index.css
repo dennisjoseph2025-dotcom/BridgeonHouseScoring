@@ -5,8 +5,8 @@
   --gryffindor: #740001;
   --slytherin: #1A472A;
   --hufflepuff: #FFDB00;
-  --ravenclaw: #1f48cd;
-  --media: #bf661e;
+  --ravenclaw: #0E1A40;
+  --media: #2C5AA0;
   
   --primary: #3B82F6;
   --secondary: #6366F1;
@@ -30,13 +30,13 @@ body {
   min-height: 100vh;
 }
 
+
 /* Custom utility classes */
 .glass {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 .glass-dark {
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(10px);

@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectCurrentUser, selectUserRole, startHouseListener, startQuizHistoryListener } from '../store/slices/quizSlice';
+import { selectCurrentUser, selectUserRole, startHouseListener, startQuizHistoryListener } from './store/slices/quizSlice';
 import './index.css';
-import Layout from './Layout';
-import Login from './Login';
-import HouseTargetSelection from './HouseTargetSelection';
-import QuizScoring from './QuizScoring';
-import QuizHistory from './QuizHistory';
-import AdminScoring from './AdminScoring';
-import Timer from './Timer';
-import Leaderboard from './Leaderboard';
+import Layout from './components/Layout';
+import Login from './components/Login';
+import HouseTargetSelection from './components/HouseTargetSelection';
+import QuizScoring from './components/QuizScoring';
+import QuizHistory from './components/QuizHistory';
+import AdminScoring from './components/AdminScoring';
+import Timer from './components/Timer';
+import Leaderboard from './components/Leaderboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -39,7 +39,7 @@ const NotFound = () => {
   const userRole = useSelector(selectUserRole);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="glass rounded-2xl p-12 text-center max-w-md">
         <div className="w-20 h-20 bg-red-500/20 rounded-2xl mx-auto mb-6 flex items-center justify-center">
           <span className="text-3xl">🔍</span>

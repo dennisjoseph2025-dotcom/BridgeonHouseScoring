@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectHouses } from '../store/slices/quizSlice';
 
+
 const Leaderboard = () => {
   const houses = useSelector(selectHouses);
   const navigate = useNavigate();

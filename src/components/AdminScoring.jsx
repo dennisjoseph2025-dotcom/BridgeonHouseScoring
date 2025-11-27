@@ -7,6 +7,7 @@ import {
   selectHouses, 
   resetAllScores 
 } from '../store/slices/quizSlice';
+
 import toast from 'react-hot-toast';
 
 const AdminScoring = () => {
