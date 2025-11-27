@@ -4,10 +4,10 @@ import { Toaster } from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   selectScoringHouse, 
-  setScoringHouse, 
   selectHouses, 
   selectCurrentUser, 
   selectUserRole,
+  selectFirebaseConnected,
   logoutUser 
 } from '../store/slices/quizSlice';
 
@@ -19,6 +19,7 @@ const Layout = ({ children }) => {
   const houses = useSelector(selectHouses);
   const currentUser = useSelector(selectCurrentUser);
   const userRole = useSelector(selectUserRole);
+  const firebaseConnected = useSelector(selectFirebaseConnected);
 
   // Base navigation items for all users
   const baseNavItems = [
@@ -54,25 +55,20 @@ const Layout = ({ children }) => {
   // Get the scoring house object to display proper name
   const scoringHouse = houses.find(h => h.id === scoringHouseId);
 
-  // Hide scoring house display on specific pages
-  const shouldShowScoringHouse = scoringHouse && 
-    location.pathname !== '/select-targets';
-
   const handleLogout = () => {
     dispatch(logoutUser());
-    // Also clear selected targets when logging out
     localStorage.removeItem('selectedTargets');
     navigate('/login');
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <header className="glass border-b border-white/10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">B</span>
               </div>
               <div>
@@ -81,7 +77,7 @@ const Layout = ({ children }) => {
               </div>
             </div>
 
-            {/* User Display - Conditionally Shown */}
+            {/* User Display */}
             {currentUser && (
               <div className="flex items-center space-x-4">
                 <div className="text-right">
@@ -89,6 +85,12 @@ const Layout = ({ children }) => {
                     {userRole === 'admin' ? 'Administrator' : `Scoring as: ${scoringHouse?.name || 'No House'}`}
                   </p>
                   <p className="text-white font-medium">{currentUser.displayName}</p>
+                  <div className="flex items-center space-x-1 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-xs text-slate-400">
+                      {firebaseConnected ? 'Connected' : 'Offline'}
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={handleLogout}

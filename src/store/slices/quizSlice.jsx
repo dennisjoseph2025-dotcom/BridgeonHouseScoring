@@ -10,53 +10,54 @@ import ravenclawIcon from '../../assets/ravenclaw.png';
 import mediaIcon from '../../assets/media.png';
 
 const houses = [
-  {
-    id: 'gryffindor',
-    name: 'Gryffindor',
-    color: 'gryffindor',
-    bgColor: 'bg-gryffindor',
+  { 
+    id: 'gryffindor', 
+    name: 'Gryffindor', 
+    color: 'gryffindor', 
+    bgColor: 'bg-gryffindor', 
     icon: gryffindorIcon,
     adminPoints: 0,
     totalPoints: 0
   },
-  {
-    id: 'slytherin',
-    name: 'Slytherin',
-    color: 'slytherin',
-    bgColor: 'bg-slytherin',
+  { 
+    id: 'slytherin', 
+    name: 'Slytherin', 
+    color: 'slytherin', 
+    bgColor: 'bg-slytherin', 
     icon: slytherinIcon,
     adminPoints: 0,
     totalPoints: 0
   },
-  {
-    id: 'hufflepuff',
-    name: 'Hufflepuff',
-    color: 'hufflepuff',
-    bgColor: 'bg-hufflepuff',
+  { 
+    id: 'hufflepuff', 
+    name: 'Hufflepuff', 
+    color: 'hufflepuff', 
+    bgColor: 'bg-hufflepuff', 
     icon: hufflepuffIcon,
     adminPoints: 0,
     totalPoints: 0
   },
-  {
-    id: 'ravenclaw',
-    name: 'Ravenclaw',
-    color: 'ravenclaw',
-    bgColor: 'bg-ravenclaw',
+  { 
+    id: 'ravenclaw', 
+    name: 'Ravenclaw', 
+    color: 'ravenclaw', 
+    bgColor: 'bg-ravenclaw', 
     icon: ravenclawIcon,
     adminPoints: 0,
     totalPoints: 0
   },
-  {
-    id: 'media',
-    name: 'Media Team',
-    color: 'media',
-    bgColor: 'bg-media',
+  { 
+    id: 'media', 
+    name: 'Media Team', 
+    color: 'media', 
+    bgColor: 'bg-media', 
     icon: mediaIcon,
     adminPoints: 0,
     totalPoints: 0
   }
 ];
 
+// Load initial state from Firebase or localStorage
 const loadInitialState = () => {
   const savedScores = localStorage.getItem('houseScores');
   if (savedScores) {
@@ -75,15 +76,14 @@ const initialState = {
   scoringHouse: null,
   currentUser: null,
   userRole: null,
-  // Quiz points history - stored by date
   quizHistory: {},
-  // Current quiz session points (temporary, resets after saving)
   currentQuizPoints: {},
   timer: {
     isRunning: false,
     time: 0,
     initialTime: 0
-  }
+  },
+  firebaseConnected: false
 };
 
 const quizSlice = createSlice({
@@ -103,7 +103,7 @@ const quizSlice = createSlice({
       state.userRole = null;
       state.scoringHouse = null;
     },
-    // Quiz Scoring (temporary for current session)
+    // Quiz Scoring
     addQuizPoint: (state, action) => {
       const houseId = action.payload;
       if (!state.currentQuizPoints[houseId]) {
@@ -118,12 +118,13 @@ const quizSlice = createSlice({
       }
     },
     // Save current quiz points to history
-    saveQuizToHistory: (state, action) => {
-      const date = action.payload || new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    saveQuizToHistory: (state) => {
+      const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      
       if (!state.quizHistory[date]) {
         state.quizHistory[date] = {};
       }
-
+      
       // Add current quiz points to history
       Object.keys(state.currentQuizPoints).forEach(houseId => {
         if (!state.quizHistory[date][houseId]) {
@@ -131,24 +132,24 @@ const quizSlice = createSlice({
         }
         state.quizHistory[date][houseId] += state.currentQuizPoints[houseId];
       });
-
-      // Clear current quiz points after saving
-      state.currentQuizPoints = {};
-
+      
       // Save to Firebase
       saveQuizHistoryToFirebase(state.quizHistory);
+      
+      // Clear current quiz points after saving
+      state.currentQuizPoints = {};
     },
     // Clear current quiz session
     clearCurrentQuiz: (state) => {
       state.currentQuizPoints = {};
     },
-    // Admin Scoring (for total house points)
+    // Admin Scoring
     addAdminPoint: (state, action) => {
       const houseId = action.payload;
       const house = state.houses.find(h => h.id === houseId);
       if (house) {
         house.adminPoints += 1;
-        house.totalPoints = house.adminPoints; // Only admin points count for total
+        house.totalPoints = house.adminPoints;
         updateHouseInFirebase(house);
       }
     },
@@ -157,23 +158,27 @@ const quizSlice = createSlice({
       const house = state.houses.find(h => h.id === houseId);
       if (house && house.adminPoints > 0) {
         house.adminPoints -= 1;
-        house.totalPoints = house.adminPoints; // Only admin points count for total
+        house.totalPoints = house.adminPoints;
         updateHouseInFirebase(house);
       }
     },
-    // Update houses from Firebase
+    // Update from Firebase
     updateHousesFromFirebase: (state, action) => {
       const firebaseData = action.payload;
-      state.houses.forEach(house => {
-        if (firebaseData[house.id]) {
-          house.adminPoints = firebaseData[house.id].adminPoints || 0;
-          house.totalPoints = firebaseData[house.id].totalPoints || 0;
-        }
-      });
+      if (firebaseData) {
+        state.houses.forEach(house => {
+          if (firebaseData[house.id]) {
+            house.adminPoints = firebaseData[house.id].adminPoints || 0;
+            house.totalPoints = firebaseData[house.id].totalPoints || 0;
+          }
+        });
+      }
     },
-    // Update quiz history from Firebase
     updateQuizHistoryFromFirebase: (state, action) => {
       state.quizHistory = action.payload || {};
+    },
+    setFirebaseConnected: (state, action) => {
+      state.firebaseConnected = action.payload;
     },
     // Timer actions
     startTimer: (state) => {
@@ -210,37 +215,60 @@ const quizSlice = createSlice({
 
 // Helper function to update house in Firebase
 const updateHouseInFirebase = (house) => {
-  const houseRef = ref(database, `houses/${house.id}`);
-  set(houseRef, {
-    adminPoints: house.adminPoints,
-    totalPoints: house.totalPoints,
-    name: house.name,
-    lastUpdated: Date.now()
-  });
+  try {
+    const houseRef = ref(database, `houses/${house.id}`);
+    set(houseRef, {
+      adminPoints: house.adminPoints,
+      totalPoints: house.totalPoints,
+      name: house.name,
+      lastUpdated: Date.now()
+    });
+  } catch (error) {
+    console.error('Error updating house in Firebase:', error);
+  }
 };
 
 // Helper function to save quiz history to Firebase
 const saveQuizHistoryToFirebase = (quizHistory) => {
-  const quizHistoryRef = ref(database, 'quizHistory');
-  set(quizHistoryRef, quizHistory);
+  try {
+    const quizHistoryRef = ref(database, 'quizHistory');
+    set(quizHistoryRef, quizHistory);
+  } catch (error) {
+    console.error('Error saving quiz history to Firebase:', error);
+  }
 };
 
 // Real-time listener for house data
 export const startHouseListener = () => (dispatch) => {
-  const housesRef = ref(database, 'houses');
-  onValue(housesRef, (snapshot) => {
-    const data = snapshot.val();
-    dispatch(updateHousesFromFirebase(data));
-  });
+  try {
+    const housesRef = ref(database, 'houses');
+    onValue(housesRef, (snapshot) => {
+      const data = snapshot.val();
+      dispatch(updateHousesFromFirebase(data));
+      dispatch(setFirebaseConnected(true));
+    }, (error) => {
+      console.error('Firebase houses listener error:', error);
+      dispatch(setFirebaseConnected(false));
+    });
+  } catch (error) {
+    console.error('Error starting house listener:', error);
+    dispatch(setFirebaseConnected(false));
+  }
 };
 
 // Real-time listener for quiz history
 export const startQuizHistoryListener = () => (dispatch) => {
-  const quizHistoryRef = ref(database, 'quizHistory');
-  onValue(quizHistoryRef, (snapshot) => {
-    const data = snapshot.val();
-    dispatch(updateQuizHistoryFromFirebase(data));
-  });
+  try {
+    const quizHistoryRef = ref(database, 'quizHistory');
+    onValue(quizHistoryRef, (snapshot) => {
+      const data = snapshot.val();
+      dispatch(updateQuizHistoryFromFirebase(data));
+    }, (error) => {
+      console.error('Firebase quiz history listener error:', error);
+    });
+  } catch (error) {
+    console.error('Error starting quiz history listener:', error);
+  }
 };
 
 export const {
@@ -255,6 +283,7 @@ export const {
   subtractAdminPoint,
   updateHousesFromFirebase,
   updateQuizHistoryFromFirebase,
+  setFirebaseConnected,
   startTimer,
   pauseTimer,
   resetTimer,
@@ -270,7 +299,8 @@ export const selectUserRole = (state) => state.quiz.userRole;
 export const selectTimer = (state) => state.quiz.timer;
 export const selectCurrentQuizPoints = (state) => state.quiz.currentQuizPoints;
 export const selectQuizHistory = (state) => state.quiz.quizHistory;
-export const selectHouseById = (houseId) => (state) =>
+export const selectFirebaseConnected = (state) => state.quiz.firebaseConnected;
+export const selectHouseById = (houseId) => (state) => 
   state.quiz.houses.find(house => house.id === houseId);
 
 export default quizSlice.reducer;
