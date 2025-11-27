@@ -1,16 +1,44 @@
-import { database } from '../firebase/config';
+import { database, auth } from '../firebase/config';
 import { ref, set, onValue, off, get, update, remove } from 'firebase/database';
+import { signInAnonymously } from 'firebase/auth';
 
 class FirebaseService {
   constructor() {
     this.connectionStatus = 'disconnected';
     this.listeners = new Map();
     this.connectionCallbacks = [];
+    this.isAuthenticated = false;
+    
+    // Initialize anonymous authentication
+    this.initializeAuth();
+  }
+
+  // Initialize anonymous authentication for write operations
+  async initializeAuth() {
+    try {
+      await signInAnonymously(auth);
+      this.isAuthenticated = true;
+      console.log('✅ Firebase anonymous authentication successful');
+    } catch (error) {
+      console.error('❌ Firebase authentication failed:', error);
+      this.isAuthenticated = false;
+    }
+  }
+
+  // Wait for authentication to be ready
+  async ensureAuthenticated() {
+    if (!this.isAuthenticated) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!this.isAuthenticated) {
+        throw new Error('Authentication not ready. Please try again.');
+      }
+    }
   }
 
   // Connection testing methods
   async testConnection() {
     try {
+      await this.ensureAuthenticated();
       const testRef = ref(database, 'connectionTest');
       
       await set(testRef, {
@@ -160,6 +188,7 @@ class FirebaseService {
 
   async updateData(path, updates) {
     try {
+      await this.ensureAuthenticated();
       const dataRef = ref(database, path);
       const updatesWithMeta = {
         ...updates,
@@ -235,6 +264,11 @@ class FirebaseService {
 
   getActiveListeners() {
     return Array.from(this.listeners.keys());
+  }
+
+  // Check authentication status
+  getAuthStatus() {
+    return this.isAuthenticated;
   }
 }
 

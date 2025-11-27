@@ -68,7 +68,8 @@ const initialState = {
     time: 0,
     initialTime: 0
   },
-  firebaseConnected: false
+  firebaseConnected: false,
+  firebaseAuthenticated: false
 };
 
 const quizSlice = createSlice({
@@ -123,7 +124,7 @@ const quizSlice = createSlice({
     clearCurrentQuiz: (state) => {
       state.currentQuizPoints = {};
     },
-    // Admin Scoring - Updated to remove direct Firebase calls
+    // Admin Scoring
     addAdminPoint: (state, action) => {
       const houseId = action.payload;
       const house = state.houses.find(h => h.id === houseId);
@@ -161,6 +162,9 @@ const quizSlice = createSlice({
     setFirebaseConnected: (state, action) => {
       state.firebaseConnected = action.payload;
     },
+    setFirebaseAuthenticated: (state, action) => {
+      state.firebaseAuthenticated = action.payload;
+    },
     // Timer actions
     startTimer: (state) => {
       state.timer.isRunning = true;
@@ -184,7 +188,6 @@ const quizSlice = createSlice({
       state.timer.time = action.payload;
       state.timer.initialTime = action.payload;
     },
-    // Updated to remove direct Firebase calls
     resetAllScores: (state) => {
       state.houses.forEach(house => {
         house.adminPoints = 0;
@@ -193,9 +196,17 @@ const quizSlice = createSlice({
     }
   }
 });
+
+// Thunk Actions with Authentication Handling
 export const saveQuizToFirebase = () => async (dispatch, getState) => {
   try {
     const state = getState().quiz;
+    
+    // Wait for authentication if needed
+    if (!firebaseService.getAuthStatus()) {
+      console.log('🔄 Waiting for Firebase authentication...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     
     // Save quiz history to Firebase
     await firebaseService.writeData('quizHistory', state.quizHistory);
@@ -257,10 +268,33 @@ export const startQuizHistoryListener = () => (dispatch) => {
 
   return unsubscribe;
 };
-// Add new thunk actions for Firebase operations:
+
+// Add Firebase authentication status listener
+export const startFirebaseAuthListener = () => (dispatch) => {
+  console.log('🔄 Starting Firebase auth listener...');
+  
+  const unsubscribe = firebaseService.onConnectionChange((status) => {
+    console.log('📡 Firebase connection status:', status);
+    dispatch(setFirebaseConnected(status.connected));
+    
+    // Check authentication status
+    const authStatus = firebaseService.getAuthStatus();
+    dispatch(setFirebaseAuthenticated(authStatus));
+  });
+
+  return unsubscribe;
+};
+
+// Enhanced thunk actions for Firebase operations with authentication handling:
 export const saveHouseToFirebase = (house) => async () => {
   try {
     console.log('🔄 Attempting to save house to Firebase:', house);
+    
+    // Wait for authentication if needed
+    if (!firebaseService.getAuthStatus()) {
+      console.log('⏳ Waiting for authentication before saving house...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     
     const result = await firebaseService.updateHousePoints(house.id, {
       adminPoints: house.adminPoints,
@@ -288,6 +322,12 @@ export const saveHouseToFirebase = (house) => async () => {
 
 export const saveQuizHistoryToFirebase = (quizHistory) => async () => {
   try {
+    // Wait for authentication if needed
+    if (!firebaseService.getAuthStatus()) {
+      console.log('⏳ Waiting for authentication before saving quiz history...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
     const result = await firebaseService.writeData('quizHistory', quizHistory);
     
     if (result.success) {
@@ -304,6 +344,12 @@ export const saveQuizHistoryToFirebase = (quizHistory) => async () => {
 export const saveCurrentQuizToFirebase = () => async (dispatch, getState) => {
   try {
     const state = getState().quiz;
+    
+    // Wait for authentication if needed
+    if (!firebaseService.getAuthStatus()) {
+      console.log('⏳ Waiting for authentication before saving quiz...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     
     // Save quiz history first
     const date = new Date().toISOString().split('T')[0];
@@ -335,6 +381,12 @@ export const saveCurrentQuizToFirebase = () => async (dispatch, getState) => {
 
 export const resetAllScoresFirebase = () => async (dispatch) => {
   try {
+    // Wait for authentication if needed
+    if (!firebaseService.getAuthStatus()) {
+      console.log('⏳ Waiting for authentication before resetting scores...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
     // Reset all houses in Firebase
     const resetPromises = houses.map(house => 
       firebaseService.updateHousePoints(house.id, {
@@ -359,9 +411,15 @@ export const resetAllScoresFirebase = () => async (dispatch) => {
   }
 };
 
-// Initialize Firebase data
+// Initialize Firebase data with authentication handling
 export const initializeFirebaseData = () => async () => {
   try {
+    // Wait for authentication
+    if (!firebaseService.getAuthStatus()) {
+      console.log('🔄 Waiting for Firebase authentication before initializing data...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    
     // Check if houses data exists, if not initialize
     const housesResult = await firebaseService.readData('houses');
     
@@ -394,6 +452,19 @@ export const initializeFirebaseData = () => async () => {
   }
 };
 
+// Test Firebase connection with authentication
+export const testFirebaseConnection = () => async () => {
+  try {
+    console.log('🧪 Testing Firebase connection with authentication...');
+    const result = await firebaseService.testConnection();
+    console.log('Firebase connection test result:', result);
+    return result;
+  } catch (error) {
+    console.error('Firebase connection test failed:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Export all actions
 export const {
   setScoringHouse,
@@ -408,6 +479,7 @@ export const {
   updateHousesFromFirebase,
   updateQuizHistoryFromFirebase,
   setFirebaseConnected,
+  setFirebaseAuthenticated,
   startTimer,
   pauseTimer,
   resetTimer,
@@ -424,6 +496,7 @@ export const selectTimer = (state) => state.quiz.timer;
 export const selectCurrentQuizPoints = (state) => state.quiz.currentQuizPoints;
 export const selectQuizHistory = (state) => state.quiz.quizHistory;
 export const selectFirebaseConnected = (state) => state.quiz.firebaseConnected;
+export const selectFirebaseAuthenticated = (state) => state.quiz.firebaseAuthenticated;
 export const selectHouseById = (houseId) => (state) => 
   state.quiz.houses.find(house => house.id === houseId);
 
