@@ -193,6 +193,37 @@ const quizSlice = createSlice({
     }
   }
 });
+export const saveQuizToFirebase = () => async (dispatch, getState) => {
+  try {
+    const state = getState().quiz;
+    
+    // Save quiz history to Firebase
+    await firebaseService.writeData('quizHistory', state.quizHistory);
+    
+    console.log('✅ Quiz history saved to Firebase');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error saving quiz to Firebase:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const saveCurrentQuizSession = () => async (dispatch, getState) => {
+  try {
+    const state = getState().quiz;
+    
+    // First save to local history
+    dispatch(saveQuizToHistory());
+    
+    // Then sync with Firebase
+    await dispatch(saveQuizToFirebase());
+    
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error saving quiz session:', error);
+    return { success: false, error: error.message };
+  }
+};
 
 // Update the listeners to use the service:
 export const startHouseListener = () => (dispatch) => {

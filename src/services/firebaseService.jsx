@@ -126,28 +126,12 @@ class FirebaseService {
   // Data operations
   async writeData(path, data) {
     try {
-      const dataRef = ref(database, path);
-      const dataWithMeta = {
-        ...data,
-        _lastUpdated: Date.now()
-      };
-      
-      await set(dataRef, dataWithMeta);
-      
-      return {
-        success: true,
-        path,
-        data: dataWithMeta,
-        timestamp: Date.now()
-      };
+      const result = await this.updateData(path, data);
+      console.log(`✅ Data written to ${path}:`, data);
+      return result;
     } catch (error) {
       console.error(`❌ Error writing to ${path}:`, error);
-      return {
-        success: false,
-        path,
-        error: error.message,
-        timestamp: Date.now()
-      };
+      throw error;
     }
   }
 
@@ -182,7 +166,7 @@ class FirebaseService {
         _lastUpdated: Date.now()
       };
       
-      await update(dataRef, updatesWithMeta);
+      await set(dataRef, updatesWithMeta);
       
       return {
         success: true,
@@ -202,41 +186,41 @@ class FirebaseService {
   }
 
   // House-specific operations
-async updateHousePoints(houseId, pointsData) {
-  try {
-    console.log('📝 Updating house points in Firebase:', houseId, pointsData);
-    
-    const result = await this.updateData(`houses/${houseId}`, {
-      ...pointsData,
-      lastUpdated: Date.now()
-    });
-    
-    console.log('✅ House points updated successfully:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ Error updating house points:', error);
-    return {
-      success: false,
-      error: error.message,
-      timestamp: Date.now()
-    };
+  async updateHousePoints(houseId, pointsData) {
+    try {
+      console.log('📝 Updating house points in Firebase:', houseId, pointsData);
+      
+      const result = await this.updateData(`houses/${houseId}`, {
+        ...pointsData,
+        lastUpdated: Date.now()
+      });
+      
+      console.log('✅ House points updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error updating house points:', error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
   }
-}
 
-listenToHouses(callback) {
-  console.log('🎯 Setting up houses listener...');
-  
-  return this.listenToPath('houses', (data, metadata) => {
-    console.log('📡 Houses data received:', data);
-    callback(data, null);
-  }, {
-    errorCallback: (error) => {
-      console.error('❌ Houses listener error:', error);
-      callback(null, error);
-    },
-    debug: true
-  });
-}
+  listenToHouses(callback) {
+    console.log('🎯 Setting up houses listener...');
+    
+    return this.listenToPath('houses', (data, metadata) => {
+      console.log('📡 Houses data received:', data);
+      callback(data, null);
+    }, {
+      errorCallback: (error) => {
+        console.error('❌ Houses listener error:', error);
+        callback(null, error);
+      },
+      debug: true
+    });
+  }
 
   listenToQuizHistory(callback) {
     return this.listenToPath('quizHistory', callback, {

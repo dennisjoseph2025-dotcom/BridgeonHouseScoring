@@ -2,8 +2,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectQuizHistory, selectHouses, selectUserRole, updateQuizHistoryFromFirebase } from '../store/slices/quizSlice';
-import { database } from '../firebase/config';
-import { ref, set } from 'firebase/database';
+import { firebaseService } from '../services/firebaseService'; // Import the service
 import toast from 'react-hot-toast';
 
 const QuizHistory = () => {
@@ -37,7 +36,7 @@ const QuizHistory = () => {
   };
 
   // Admin function to delete a specific date's history
-  const handleDeleteDate = (date) => {
+  const handleDeleteDate = async (date) => {
     if (!isAdmin) return;
 
     toast((t) => (
@@ -47,17 +46,24 @@ const QuizHistory = () => {
         <div className="flex space-x-3 justify-center">
           <button
             onClick={async () => {
-              const newHistory = { ...quizHistory };
-              delete newHistory[date];
-              
-              // Update Firebase
-              const quizHistoryRef = ref(database, 'quizHistory');
-              await set(quizHistoryRef, newHistory);
-              
-              // Update local state
-              dispatch(updateQuizHistoryFromFirebase(newHistory));
-              
-              toast.success('Quiz history deleted!', { icon: '🗑️' });
+              try {
+                const newHistory = { ...quizHistory };
+                delete newHistory[date];
+                
+                // Update Firebase using the service
+                const result = await firebaseService.writeData('quizHistory', newHistory);
+                
+                if (result.success) {
+                  // Update local state
+                  dispatch(updateQuizHistoryFromFirebase(newHistory));
+                  toast.success('Quiz history deleted from Firebase!', { icon: '🗑️' });
+                } else {
+                  toast.error('Failed to delete from Firebase');
+                }
+              } catch (error) {
+                toast.error('Error deleting history');
+                console.error('Delete error:', error);
+              }
               toast.dismiss(t.id);
             }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
@@ -86,14 +92,21 @@ const QuizHistory = () => {
         <div className="flex space-x-3 justify-center">
           <button
             onClick={async () => {
-              // Clear Firebase
-              const quizHistoryRef = ref(database, 'quizHistory');
-              await set(quizHistoryRef, {});
-              
-              // Update local state
-              dispatch(updateQuizHistoryFromFirebase({}));
-              
-              toast.success('All quiz history cleared!', { icon: '🗑️' });
+              try {
+                // Clear Firebase using the service
+                const result = await firebaseService.writeData('quizHistory', {});
+                
+                if (result.success) {
+                  // Update local state
+                  dispatch(updateQuizHistoryFromFirebase({}));
+                  toast.success('All quiz history cleared from Firebase!', { icon: '🗑️' });
+                } else {
+                  toast.error('Failed to clear Firebase');
+                }
+              } catch (error) {
+                toast.error('Error clearing history');
+                console.error('Clear error:', error);
+              }
               toast.dismiss(t.id);
             }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
