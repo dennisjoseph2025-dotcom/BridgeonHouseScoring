@@ -72,7 +72,11 @@ const loadInitialState = () => {
 };
 
 const initialState = {
-  houses: loadInitialState(),
+  houses: houses.map(house => ({
+    ...house,
+    adminPoints: 0,
+    totalPoints: 0
+  })),
   scoringHouse: null,
   currentUser: null,
   userRole: null,

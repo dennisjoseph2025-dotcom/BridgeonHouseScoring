@@ -1,17 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { setCurrentUser, selectHouses } from '../store/slices/quizSlice';
-
+import { setCurrentUser, selectHouses, selectCurrentUser, selectUserRole } from '../store/slices/quizSlice';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const houses = useSelector(selectHouses);
+  const currentUser = useSelector(selectCurrentUser);
+  const userRole = useSelector(selectUserRole);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in (persisted state)
+  useEffect(() => {
+    if (currentUser) {
+      if (userRole === 'admin') {
+        navigate('/admin-scoring');
+      } else {
+        navigate('/select-targets');
+      }
+    }
+  }, [currentUser, userRole, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -63,11 +75,31 @@ const Login = () => {
     }))
   ];
 
+  // If already logged in, show loading/redirect screen
+  if (currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="glass rounded-2xl p-12 text-center max-w-md">
+          <div className="w-20 h-20 bg-blue-500/20 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+            <span className="text-3xl">⏳</span>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-4">Welcome Back!</h2>
+          <p className="text-slate-400 mb-4">
+            Redirecting you to {userRole === 'admin' ? 'Admin Panel' : 'Scoring'}...
+          </p>
+          <div className="w-full bg-slate-700 rounded-full h-2">
+            <div className="bg-blue-500 h-2 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-lineart-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="glass rounded-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-lineart-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+          <div className="w-16 h-16 bg-linear-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
             <span className="text-white font-bold text-2xl">B</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">BRIDGEON</h1>
