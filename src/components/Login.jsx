@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setCurrentUser, selectHouses, selectCurrentUser, selectUserRole } from '../store/slices/quizSlice';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -14,7 +15,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already logged in (persisted state)
+  // Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
       if (userRole === 'admin') {
@@ -30,52 +31,68 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Check if admin login
-      if (email === 'admin@bridgeon.com' && password === 'admin123') {
-        dispatch(setCurrentUser({
-          user: { email, displayName: 'Administrator' },
-          role: 'admin',
-          houseId: null
-        }));
-        toast.success('Welcome Administrator!');
-        navigate('/admin-scoring');
-        return;
-      }
+      const auth = getAuth();
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      // Check if house login
-      const house = houses.find(h => 
-        email === `${h.id}@bridgeon.com` && password === `${h.id}123`
-      );
+      // Determine user role
+      const isAdmin = email === 'admin@bridgeon.com';
+      const userRole = isAdmin ? 'admin' : 'house';
+      const houseId = isAdmin ? null : email.split('@')[0];
 
-      if (house) {
-        dispatch(setCurrentUser({
-          user: { email, displayName: house.name },
-          role: 'house',
-          houseId: house.id
-        }));
-        toast.success(`Welcome ${house.name}!`);
-        navigate('/select-targets');
-      } else {
-        toast.error('Invalid credentials');
-      }
+      // Update Redux store
+      dispatch(setCurrentUser({
+        user: {
+          email: user.email,
+          displayName: isAdmin ? 'Administrator' : user.email.split('@')[0],
+          uid: user.uid
+        },
+        role: userRole,
+        houseId: houseId
+      }));
+
+      toast.success(`Welcome ${isAdmin ? 'Administrator' : user.email.split('@')[0]}!`, {
+        icon: '🎉',
+        duration: 2000
+      });
+
+      // Redirect based on role
+      navigate(isAdmin ? '/admin-scoring' : '/select-targets');
+
     } catch (error) {
-      toast.error('Login failed');
+      console.error('Login error:', error);
+      
+      let errorMessage = 'Login failed. Please check your credentials.';
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'User not found. Please check your email.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Wrong password. Please try again.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Demo credentials for testing
-  const demoCredentials = [
-    { role: 'Admin', email: 'admin@bridgeon.com', password: 'admin123' },
-    ...houses.map(house => ({
-      role: house.name,
-      email: `${house.id}@bridgeon.com`,
-      password: `${house.id}123`
-    }))
+  const quickLogin = (quickEmail, quickPassword) => {
+    setEmail(quickEmail);
+    setPassword(quickPassword);
+  };
+
+  // Quick login credentials
+  const quickLogins = [
+    { role: '👑 Admin', email: 'admin@bridgeon.com', password: 'admin123Head', color: 'bg-purple-500 hover:bg-purple-600' },
+    { role: '🦁 Gryffindor', email: 'gryffindor@bridgeon.com', password: 'gryffindor123red', color: 'bg-red-500 hover:bg-red-600' },
+    { role: '🐍 Slytherin', email: 'slytherin@bridgeon.com', password: 'slytherin123green', color: 'bg-green-500 hover:bg-green-600' },
+    { role: '🦡 Hufflepuff', email: 'hufflepuff@bridgeon.com', password: 'hufflepuff123yellow', color: 'bg-yellow-500 hover:bg-yellow-600' },
+    { role: '🦅 Ravenclaw', email: 'ravenclaw@bridgeon.com', password: 'ravenclaw123blue', color: 'bg-blue-500 hover:bg-blue-600' },
+    { role: '📸 Media', email: 'media@bridgeon.com', password: 'media123white', color: 'bg-indigo-500 hover:bg-indigo-600' }
   ];
 
-  // If already logged in, show loading/redirect screen
+  // If already logged in, show loading screen
   if (currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -96,67 +113,83 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="glass rounded-2xl p-8 w-full max-w-md">
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-linear-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">B</span>
+          <div className="w-20 h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <span className="text-2xl text-white">🏰</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">BRIDGEON</h1>
-          <p className="text-slate-400">House Cup Quiz System</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Bridgeon House Cup</h1>
+          <p className="text-slate-400">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">
+            <label className="block text-slate-400 text-sm font-medium mb-2">
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email"
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              placeholder="your-email@bridgeon.com"
               required
-              autoComplete="email"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">
+            <label className="block text-slate-400 text-sm font-medium mb-2">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your password"
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              placeholder="Enter password"
               required
-              autoComplete="current-password"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 ${
+              isLoading
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl'
+            }`}
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        {/* Demo Credentials */}
-        <div className="mt-8 p-4 bg-slate-800/50 rounded-lg">
-          <h3 className="text-sm font-semibold text-slate-400 mb-3">Demo Credentials:</h3>
-          <div className="space-y-2 text-xs">
-            {demoCredentials.map((cred, index) => (
-              <div key={index} className="flex justify-between text-slate-400">
-                <span>{cred.role}:</span>
-                <span>{cred.email} / {cred.password}</span>
-              </div>
+        {/* Quick Login Buttons */}
+        <div className="mt-8">
+          <h3 className="text-slate-400 text-sm font-medium mb-3 text-center">
+            Quick Sign In
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            {quickLogins.map((cred, index) => (
+              <button
+                key={index}
+                onClick={() => quickLogin(cred.email, cred.password)}
+                className={`py-2 ${cred.color} text-white rounded-lg text-sm font-medium transition-colors`}
+              >
+                {cred.role}
+              </button>
             ))}
           </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
+          <p className="text-slate-400 text-sm text-center">
+            Use your @bridgeon.com email and password to sign in
+          </p>
         </div>
       </div>
     </div>

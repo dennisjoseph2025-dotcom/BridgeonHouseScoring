@@ -1,10 +1,15 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { 
   selectCurrentUser, 
   selectUserRole, 
-  setFirebaseConnected ,startHouseListener, startQuizHistoryListener
+  setCurrentUser, 
+  logoutUser,
+  setFirebaseConnected,
+  startHouseListener, 
+  startQuizHistoryListener
 } from './store/slices/quizSlice';
 import { firebaseService } from './services/firebaseService';
 import './index.css';
@@ -44,7 +49,7 @@ const NotFound = () => {
   const userRole = useSelector(selectUserRole);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="glass rounded-2xl p-12 text-center max-w-md">
         <div className="w-20 h-20 bg-red-500/20 rounded-2xl mx-auto mb-6 flex items-center justify-center">
           <span className="text-3xl">🔍</span>
@@ -131,9 +136,54 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Start Firebase listeners
-    dispatch(startHouseListener());
-    dispatch(startQuizHistoryListener());
+    // Firebase auth state listener
+    const auth = getAuth();
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in
+        let userRole = 'house';
+        let houseId = null;
+
+        if (user.email === 'admin@bridgeon.com') {
+          userRole = 'admin';
+        } else {
+          houseId = user.email.split('@')[0];
+        }
+
+        dispatch(setCurrentUser({
+          user: {
+            email: user.email,
+            displayName: user.email.split('@')[0],
+            uid: user.uid
+          },
+          role: userRole,
+          houseId: houseId
+        }));
+
+        // Start Firebase listeners only when authenticated
+        dispatch(startHouseListener());
+        dispatch(startQuizHistoryListener());
+        dispatch(setFirebaseConnected(true));
+        
+        console.log('✅ User authenticated:', user.email);
+      } else {
+        // User is signed out
+        dispatch(logoutUser());
+        dispatch(setFirebaseConnected(false));
+        console.log('🔐 User signed out');
+      }
+    });
+
+    // Start Firebase connection monitoring
+    const connectionUnsubscribe = firebaseService.startConnectionMonitor((status) => {
+      dispatch(setFirebaseConnected(status.connected));
+    });
+
+    return () => {
+      unsubscribeAuth();
+      connectionUnsubscribe();
+      firebaseService.cleanupAllListeners();
+    };
   }, [dispatch]);
 
   return (

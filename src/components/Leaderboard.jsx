@@ -73,17 +73,10 @@ const Leaderboard = () => {
                 </div>
                 
                 <div>
-                  <h3 className={`text-xl font-bold text-${house.color}`}>
+                  <h3 className={`text-3xl font-bold text-${house.color}`}>
                     {house.name}
                   </h3>
-                  <div className="flex space-x-4 mt-1">
-                    <div className="text-slate-400 text-sm">
-                      <span className="text-blue-400 font-semibold">Admin:</span> {house.adminPoints}
-                    </div>
-                    <div className="text-slate-400 text-sm">
-                      <span className="text-green-400 font-semibold">Quiz:</span> {house.totalPoints - house.adminPoints}
-                    </div>
-                  </div>
+
                 </div>
               </div>
 
