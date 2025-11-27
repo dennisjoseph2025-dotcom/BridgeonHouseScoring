@@ -11,7 +11,7 @@ import QuizHistory from './components/QuizHistory';
 import AdminScoring from './components/AdminScoring';
 import Timer from './components/Timer';
 import Leaderboard from './components/Leaderboard';
-// import FirebaseTest from './components/FirebaseTest';
+import FirebaseTest from './components/FirebaseTest';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -134,7 +134,7 @@ function App() {
 
   return (
  <Router>
-      {/* <FirebaseTest />  */}
+      <FirebaseTest /> {/* Remove this after testing */}
       <AppContent />
     </Router>
   );
