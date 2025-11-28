@@ -12,8 +12,8 @@ const Leaderboard = () => {
 
   const getMedal = (index) => {
     switch (index) {
-      case 0: return `${index + 1}`;;
-      case 1: return `${index + 1}`;;
+      case 0: return `${index + 1}`;
+      case 1: return `${index + 1}`;
       case 2: return `${index + 1}`;
       default: return `${index + 1}`;
     }
@@ -29,64 +29,63 @@ const Leaderboard = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto fade-in">
+    <div className="max-w-4xl mx-auto fade-in px-4">
       {/* Header */}
-      <div className="glass rounded-2xl p-8 mb-8 text-center">
-        <div className="w-20 h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-          <span className="text-3xl">🏆</span>
+      <div className="glass rounded-2xl p-6 md:p-8 mb-6 md:mb-8 text-center">
+        <div className="w-16 h-16 md:w-20 md:h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+          <span className="text-2xl md:text-3xl">🏆</span>
         </div>
-        <h1 className="text-4xl font-bold text-white mb-2">House Cup Leaderboard</h1>
-        <p className="text-slate-400 text-lg">Live standings updated in real-time</p>
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">House Cup Leaderboard</h1>
+        <p className="text-slate-400 text-sm md:text-lg">Live standings updated in real-time</p>
       </div>
 
       {/* Leaderboard */}
-      <div className="glass rounded-2xl p-8">
-        <div className="space-y-4">
+      <div className="glass rounded-2xl p-4 md:p-8">
+        <div className="space-y-3 md:space-y-4">
           {sortedHouses.map((house, index) => (
             <div
               key={house.id}
-              className={`flex items-center justify-between p-6 rounded-xl transition-all duration-200 border ${
+              className={`flex items-center justify-between p-4 md:p-6 rounded-xl transition-all duration-200 border ${
                 index < 3 
                   ? `bg-linear-to-r ${getRankColor(index)}` 
                   : 'glass-dark hover:bg-white/5 border-slate-700'
               }`}
             >
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 md:space-x-4">
                 {/* Rank Badge */}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg ${
                   index === 0 ? 'bg-yellow-500' :
                   index === 1 ? 'bg-green-400' :
                   index === 2 ? 'bg-gray-400' : 'bg-slate-600'
                 }`}>
-                  <span className="text-white font-bold text-lg">
+                  <span className="text-white font-bold text-base md:text-lg">
                     {getMedal(index)}
                   </span>
                 </div>
 
                 {/* House Icon and Name */}
-                <div className={`w-16 h-16 ${house.bgColor} rounded-xl flex items-center justify-center shadow-lg`}>
+                <div className={`w-12 h-12 md:w-16 md:h-16 ${house.bgColor} rounded-xl flex items-center justify-center shadow-lg`}>
                   <img
                     src={house.icon}
                     alt={house.name}
-                    className="w-10 h-10 object-contain"
+                    className="w-6 h-6 md:w-10 md:h-10 object-contain"
                   />
                 </div>
                 
                 <div>
-                  <h3 className={`text-3xl font-bold text-${house.color}`}>
+                  <h3 className={`text-xl md:text-3xl font-bold text-${house.color}`}>
                     {house.name}
                   </h3>
-
                 </div>
               </div>
 
               {/* Total Points Display */}
               <div className="text-right">
-                <div className="text-3xl font-bold text-white mb-1">
+                <div className="text-xl md:text-3xl font-bold text-white mb-1">
                   {house.totalPoints}
                 </div>
-                <div className="text-slate-400 text-sm font-medium">
-                  TOTAL POINTS
+                <div className="text-slate-400 text-xs md:text-sm font-medium">
+                  POINTS
                 </div>
                 {index < 3 && (
                   <div className={`text-xs font-semibold mt-1 ${
@@ -102,16 +101,16 @@ const Leaderboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center space-x-4 mt-8 pt-6 border-t border-slate-700">
+        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 mt-6 md:mt-8 pt-6 border-t border-slate-700">
           <button
             onClick={() => navigate(-1)}
-            className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
+            className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
           >
             ← Back
           </button>
           <button
             onClick={() => navigate('/admin-scoring')}
-            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors"
+            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
           >
             👑 Admin Scoring
           </button>

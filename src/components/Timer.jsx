@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { 
   startTimer, 
   pauseTimer, 
@@ -8,7 +9,6 @@ import {
   setTimer,
   selectTimer 
 } from '../store/slices/quizSlice';
-import { useNavigate } from 'react-router-dom';
 
 const Timer = () => {
   const dispatch = useDispatch();
@@ -139,23 +139,23 @@ const Timer = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto fade-in">
-      <div className="glass rounded-2xl p-6">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">Quiz Timer</h1>
-          <p className="text-slate-400 text-sm">Countdown timer for quiz sessions</p>
+    <div className="max-w-md mx-auto fade-in px-4 min-h-[75vh] md:min-h-auto flex items-center justify-center py-4">
+      <div className="glass rounded-2xl p-4 md:p-6 w-full">
+        <div className="text-center mb-4 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-white mb-2">Quiz Timer</h1>
+          <p className="text-slate-400 text-xs md:text-sm">Countdown timer for quiz sessions</p>
         </div>
 
         {/* Timer Display */}
-        <div className="text-center mb-6">
-          <div className={`text-6xl font-bold mb-4 font-mono ${
+        <div className="text-center mb-4 md:mb-6">
+          <div className={`text-5xl md:text-6xl font-bold mb-3 md:mb-4 font-mono ${
             isRedirecting ? 'text-red-400 animate-pulse' :
             timer.isRunning ? 'text-green-400' : 
             timer.time === 0 ? 'text-white' : 'text-blue-400'
           }`}>
             {formatTime(localTime)}
           </div>
-          <div className={`text-sm ${
+          <div className={`text-xs md:text-sm ${
             isRedirecting ? 'text-red-400 font-semibold' : 'text-slate-400'
           }`}>
             {getStatusText()}
@@ -169,7 +169,7 @@ const Timer = () => {
 
         {/* Progress Bar */}
         {initialTime > 0 && timer.time > 0 && !isRedirecting && (
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <div className="w-full bg-slate-700 rounded-full h-2">
               <div 
                 className="bg-green-500 h-2 rounded-full transition-all duration-1000"
@@ -180,11 +180,11 @@ const Timer = () => {
         )}
 
         {/* Control Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-4 md:mb-6">
           <button
             onClick={handleStartPause}
             disabled={!isStartButtonEnabled()}
-            className={`py-3 rounded-xl font-semibold text-base transition-all duration-200 ${
+            className={`py-3 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 ${
               !isStartButtonEnabled()
                 ? 'bg-gray-500 cursor-not-allowed text-gray-300' :
                 timer.isRunning
@@ -197,7 +197,7 @@ const Timer = () => {
           <button
             onClick={handleReset}
             disabled={isRedirecting}
-            className={`py-3 rounded-xl font-semibold text-base shadow-lg transition-all duration-200 ${
+            className={`py-3 rounded-xl font-semibold text-sm md:text-base shadow-lg transition-all duration-200 ${
               isRedirecting
                 ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                 : 'bg-red-500 hover:bg-red-600 text-white'
@@ -208,15 +208,15 @@ const Timer = () => {
         </div>
 
         {/* Quick Time Buttons */}
-        <div className="mb-6">
-          <h3 className="text-base font-semibold text-white mb-3 text-center">Quick Set</h3>
+        <div className="mb-4 md:mb-6">
+          <h3 className="text-sm md:text-base font-semibold text-white mb-2 md:mb-3 text-center">Quick Set</h3>
           <div className="grid grid-cols-5 gap-2">
             {quickTimeButtons.map(time => (
               <button
                 key={time}
                 onClick={() => handleQuickTimeSet(time)}
                 disabled={isRedirecting}
-                className={`py-2 rounded-lg font-medium transition-colors text-sm ${
+                className={`py-2 rounded-lg font-medium transition-colors text-xs md:text-sm ${
                   isRedirecting
                     ? 'bg-gray-500 cursor-not-allowed text-gray-300' :
                     initialTime === time 
@@ -231,17 +231,17 @@ const Timer = () => {
         </div>
 
         {/* Custom Time Input */}
-        <div className="glass-dark rounded-xl p-4 mb-4">
-          <h3 className="text-base font-semibold text-white mb-3 text-center">Custom Time</h3>
+        <div className="glass-dark rounded-xl p-3 md:p-4 mb-3 md:mb-4">
+          <h3 className="text-sm md:text-base font-semibold text-white mb-2 md:mb-3 text-center">Custom Time</h3>
           <div className="flex space-x-2">
             <input
               type="number"
               min="1"
-              // value={customTime}
+              value={customTime}
               onChange={(e) => setCustomTime(parseInt(e.target.value))}
               placeholder="Seconds"
               disabled={isRedirecting}
-              className={`flex-1 px-3 py-2 border rounded-lg  text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+              className={`flex-1 px-3 py-2 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                 isRedirecting
                   ? 'bg-gray-600 border-gray-500 cursor-not-allowed'
                   : 'bg-slate-800 border-slate-600'
@@ -250,7 +250,7 @@ const Timer = () => {
             <button
               onClick={handleSetCustomTime}
               disabled={isRedirecting || customTime <= 0}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${
+              className={`px-3 py-2 rounded-lg font-semibold transition-colors text-sm ${
                 isRedirecting || customTime <= 0
                   ? 'bg-gray-500 cursor-not-allowed text-gray-300' 
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
@@ -262,16 +262,16 @@ const Timer = () => {
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-center space-x-3 mt-6">
+        <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-3 mt-4 md:mt-6">
           <button
             onClick={() => navigate('/quiz-scoring')}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors text-sm"
+            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors text-sm"
           >
             🎯 Back to Scoring
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm"
+            className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm"
           >
             🏆 Leaderboard
           </button>
