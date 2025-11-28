@@ -73,8 +73,8 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <header className="glass border-b border-white/10">
+      {/* Fixed Header - Darker Background */}
+      <header className="bg-slate-900/95 border-b border-slate-700 fixed top-0 left-0 right-0 z-50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           {/* Top Bar - Logo and Mobile Menu Button */}
           <div className="flex items-center justify-between">
@@ -82,35 +82,41 @@ const Layout = ({ children }) => {
               <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">B</span>
               </div>
+              {/* Mobile BRIDGEON text */}
+              <div className="block sm:hidden">
+                <h1 className="text-lg font-semibold text-white">BRIDGEON</h1>
+              </div>
+              {/* Desktop text */}
               <div className="hidden sm:block">
                 <h1 className="text-xl font-semibold text-white">BRIDGEON</h1>
                 <p className="text-sm text-slate-400">House Cup Quiz System</p>
               </div>
             </div>
 
-              {/* User Display - Desktop */}
-              {currentUser && (
-                <div className="hidden md:flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-sm text-slate-400">
-                      {userRole === 'admin' ? 'Administrator' : `Scoring as: ${scoringHouse?.name || 'No House'}`}
-                    </p>
-                    {/* <p className="text-white font-medium">{currentUser.displayName}</p> */}
-                    <div className="flex items-center space-x-1 mt-1">
-                      <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <span className="text-xs text-slate-400">
-                        {firebaseConnected ? 'Connected' : 'Offline'}
-                      </span>
-                    </div>
+            {/* User Display - Desktop */}
+            {currentUser && (
+              <div className="hidden md:flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm text-slate-400">
+                    {userRole === 'admin' ? 'Administrator' : `Scoring By: ${scoringHouse?.name || 'No House'}`}
+                  </p>
+                  {/* <p className="text-white font-medium">{currentUser.displayName}</p> */}
+                  <div className="flex items-center space-x-1 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-xs text-slate-400">
+                      {firebaseConnected ? 'Connected' : 'Offline'}
+                    </span>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
-                  >
-                    Logout
-                  </button>
                 </div>
-              )}
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex space-x-1">
               {navItems.map((item) => (
@@ -119,8 +125,8 @@ const Layout = ({ children }) => {
                   to={item.path}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                     location.pathname === item.path
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-blue-600 text-white border border-blue-700'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                 >
                   <span>{item.icon}</span>
@@ -128,7 +134,6 @@ const Layout = ({ children }) => {
                 </Link>
               ))}
             </nav>
-
 
             {/* Mobile Menu Button */}
             <div className="flex items-center space-x-2 lg:hidden">
@@ -142,7 +147,7 @@ const Layout = ({ children }) => {
               )}
               <button
                 onClick={toggleMobileMenu}
-                className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
               >
                 {isMobileMenuOpen ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,22 +162,21 @@ const Layout = ({ children }) => {
             </div>
           </div>
 
-          {/* Mobile Navigation Menu */}
+          {/* Mobile Navigation Menu - Darker Background when open */}
           {isMobileMenuOpen && (
-            <div className="lg:hidden mt-4 pb-4 border-t border-white/10 pt-4">
+            <div className="lg:hidden mt-4 pb-4 border-t border-slate-700 pt-4 bg-slate-800/95 backdrop-blur-sm rounded-lg">
               {/* Mobile User Info */}
               {currentUser && (
-                <div className="mb-4 p-3 bg-slate-800/50 rounded-lg">
+                <div className="mb-4 p-3 bg-slate-700/80 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-slate-400">
-                        {userRole === 'admin' ? 'Administrator' : `Scoring as: ${scoringHouse?.name || 'No House'}`}
+                      <p className="text-sm text-slate-200">
+                        {userRole === 'admin' ? 'Administrator' : `Scoring By: ${scoringHouse?.name || 'No House'}`}
                       </p>
-                      <p className="text-white font-medium">{currentUser.displayName}</p>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                      className="px-3 py-1 bg-red-600 text-white border border-red-700 rounded-lg hover:bg-red-700 transition-colors text-sm"
                     >
                       Logout
                     </button>
@@ -189,8 +193,8 @@ const Layout = ({ children }) => {
                     onClick={closeMobileMenu}
                     className={`flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 text-center ${
                       location.pathname === item.path
-                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                        ? 'bg-blue-600 text-white border border-blue-700'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-700/80'
                     }`}
                   >
                     <span className="text-lg mb-1">{item.icon}</span>
@@ -203,12 +207,13 @@ const Layout = ({ children }) => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 sm:py-8">
+      {/* Main Content with padding for fixed header */}
+      <main className="container mx-auto px-4 pt-24 pb-6 sm:pt-28 sm:pb-8">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="glass border-t border-white/10 mt-8 sm:mt-12">
+      <footer className="bg-slate-900 border-t border-slate-700">
         <div className="container mx-auto px-4 py-4 sm:py-6 text-center">
           <p className="text-slate-400 text-sm sm:text-base">
             BRIDGEON House Cup System • Magical Learning Experience
