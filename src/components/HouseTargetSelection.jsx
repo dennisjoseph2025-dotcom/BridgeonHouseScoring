@@ -106,12 +106,6 @@ const HouseTargetSelection = () => {
             </div>
           </div>
         </div>
-        
-        <div className="mt-4 p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-          <p className="text-blue-400 text-center">
-            💡 You cannot score your own house ({scoringHouse.name}). Select one or more houses to award quiz points to.
-          </p>
-        </div>
       </div>
 
       {/* Selection Controls */}

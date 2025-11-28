@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { 
   addAdminPoint, 
   subtractAdminPoint, 
+  applyAdminPoints,
   selectHouses, 
   resetAllScoresFirebase,
-  saveHouseToFirebase
+  saveAllHousesSingleWrite // ADD THIS IMPORT
 } from '../store/slices/quizSlice';
 import toast from 'react-hot-toast';
 
@@ -15,91 +16,89 @@ const AdminScoring = () => {
   const navigate = useNavigate();
   const houses = useSelector(selectHouses);
 
-  const handleAddPoints = async (houseId, points) => {
+  const handleAddPoints = (houseId, points) => {
     const house = houses.find(h => h.id === houseId);
     
     try {
-      // Update local state for each point
+      // Update local state for each point (only adminPoints, not totalPoints)
       for (let i = 0; i < points; i++) {
         dispatch(addAdminPoint(houseId));
       }
       
-      // Get the UPDATED house data from the store after the state update
-      const updatedHouses = houses.map(h => 
-        h.id === houseId 
-          ? { ...h, adminPoints: h.adminPoints + points }
-          : h
-      );
-      const updatedHouse = updatedHouses.find(h => h.id === houseId);
-      
-      // Sync with Firebase - .unwrap() REMOVED
-      await dispatch(saveHouseToFirebase(updatedHouse));
-      
-      toast.success(`+${points} points to ${house.name}`, {
+      toast.success(`+${points} pending points to ${house.name}`, {
         icon: '👑',
         duration: 1500
       });
     } catch (error) {
-      toast.error(`Failed to save points for ${house.name}`);
-      console.error('Error saving to Firebase:', error);
+      toast.error(`Failed to add points for ${house.name}`);
+      console.error('Error adding points:', error);
     }
   };
 
-  const handleSubtractPoint = async (houseId) => {
+  const handleSubtractPoint = (houseId) => {
     const house = houses.find(h => h.id === houseId);
-    if (house.adminPoints === 0) {
+    const currentTotal = house.totalPoints + house.adminPoints;
+    
+    if (currentTotal <= 0) {
       toast.error(`${house.name} has no points to subtract`);
       return;
     }
     
     try {
-      // Update local state
+      // Update local state (only adminPoints - can go negative)
       dispatch(subtractAdminPoint(houseId));
       
-      // Get the UPDATED house data from the store after the state update
-      const updatedHouses = houses.map(h => 
-        h.id === houseId 
-          ? { ...h, adminPoints: h.adminPoints - 1 }
-          : h
-      );
-      const updatedHouse = updatedHouses.find(h => h.id === houseId);
-      
-      // Sync with Firebase - .unwrap() REMOVED
-      await dispatch(saveHouseToFirebase(updatedHouse));
-      
-      toast.error(`-1 point from ${house.name}`, {
+      toast.error(`-1 pending point from ${house.name}`, {
         icon: '🔻',
         duration: 1500
       });
     } catch (error) {
-      toast.error(`Failed to save points for ${house.name}`);
-      console.error('Error saving to Firebase:', error);
+      toast.error(`Failed to subtract points for ${house.name}`);
+      console.error('Error subtracting points:', error);
     }
   };
 
-  const handleSaveScores = async () => {
+ const handleSaveScores = async () => {
+  try {
+    // Check if any house would have negative total points after applying changes
+    const wouldHaveNegative = houses.some(house => 
+      house.totalPoints + house.adminPoints < 0
+    );
+    
+    if (wouldHaveNegative) {
+      toast.error('Cannot save: Some houses would have negative total points');
+      return;
+    }
+
+    // Show loading state immediately
+    const saveToast = toast.loading('Saving scores...');
+
+    // Apply admin points to total points
+    dispatch(applyAdminPoints());
+    
     try {
-      // Update total points for all houses and reset admin points
-      const savePromises = houses.map(house => {
-        const newTotalPoints = house.totalPoints + house.adminPoints;
-        return dispatch(saveHouseToFirebase({
-          ...house,
-          adminPoints: 0,
-          totalPoints: newTotalPoints
-        }));
-      });
-
-      await Promise.all(savePromises);
+      // Use the ultra-fast single write approach
+      const result = await dispatch(saveAllHousesSingleWrite());
       
-      toast.success('Scores saved successfully! Points added to totals and reset for next session.', {
-        icon: '💾',
-        duration: 3000
-      });
+      if (result.success) {
+        toast.success('Scores saved successfully!', {
+          icon: '💾',
+          duration: 2000
+        });
+      } else {
+        throw new Error(result.error || 'Failed to save scores');
+      }
     } catch (error) {
-      toast.error('Failed to save scores');
-      console.error('Error saving scores:', error);
+      console.error('❌ Error saving scores:', error);
+      toast.error('Failed to save scores to database');
+    } finally {
+      toast.dismiss(saveToast);
     }
-  };
+  } catch (error) {
+    console.error('❌ Error in save operation:', error);
+    toast.error('Failed to process scores');
+  }
+};
 
   const handleResetScores = () => {
     toast((t) => (
@@ -109,7 +108,6 @@ const AdminScoring = () => {
           <button
             onClick={async () => {
               try {
-                // .unwrap() REMOVED
                 await dispatch(resetAllScoresFirebase());
                 toast.success('All scores reset!', { icon: '🔄' });
                 toast.dismiss(t.id);
@@ -133,8 +131,11 @@ const AdminScoring = () => {
     ));
   };
 
-  // Calculate total points currently given (sum of all adminPoints)
-  const totalPointsGiven = houses.reduce((sum, house) => sum + house.adminPoints, 0);
+  // Calculate net pending changes (can be positive or negative)
+  const netPendingChanges = houses.reduce((sum, house) => sum + house.adminPoints, 0);
+
+  // Calculate what the total would be after applying pending changes
+  const getProjectedTotal = (house) => house.totalPoints + house.adminPoints;
 
   // Point increment options - only +5, +3, +1
   const pointOptions = [5, 3, 1];
@@ -151,13 +152,17 @@ const AdminScoring = () => {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Admin Scoring Panel</h1>
               <p className="text-slate-400">
-                Award house points for overall performance
+                Award or deduct house points for overall performance
               </p>
-              {totalPointsGiven > 0 && (
+              {netPendingChanges !== 0 && (
                 <div className="flex items-center space-x-2 mt-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-green-400 text-sm font-medium">
-                    {totalPointsGiven} points pending save
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${
+                    netPendingChanges > 0 ? 'bg-green-400' : 'bg-red-400'
+                  }`}></div>
+                  <span className={`text-sm font-medium ${
+                    netPendingChanges > 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {netPendingChanges > 0 ? '+' : ''}{netPendingChanges} pending changes - Click "Save Scores" to apply
                   </span>
                 </div>
               )}
@@ -167,9 +172,9 @@ const AdminScoring = () => {
           <div className="flex space-x-3">
             <button
               onClick={handleSaveScores}
-              disabled={totalPointsGiven === 0}
+              disabled={netPendingChanges === 0}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                totalPointsGiven === 0
+                netPendingChanges === 0
                   ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
                   : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
               }`}
@@ -188,80 +193,99 @@ const AdminScoring = () => {
 
       {/* Scoring Interface */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {houses.map(house => (
-          <div key={house.id} className="glass-dark rounded-2xl p-6">
-            <div className="text-center mb-6">
-              <div className={`w-20 h-20 ${house.bgColor} rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg`}>
-                <img 
-                  src={house.icon} 
-                  alt={house.name}
-                  className="w-12 h-12 object-contain"
-                />
+        {houses.map(house => {
+          const projectedTotal = getProjectedTotal(house);
+          const hasPendingChanges = house.adminPoints !== 0;
+          
+          return (
+            <div key={house.id} className="glass-dark rounded-2xl p-6">
+              <div className="text-center mb-6">
+                <div className={`w-20 h-20 ${house.bgColor} rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg`}>
+                  <img 
+                    src={house.icon} 
+                    alt={house.name}
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
+                <h3 className={`text-2xl font-bold text-${house.color} mb-4`}>
+                  {house.name}
+                </h3>
+                
+                {/* Points Display - Horizontal Layout */}
+                <div className="flex justify-between items-center mb-4 p-4 bg-slate-700/30 rounded-xl">
+                  <div className="text-center">
+                    <p className="text-slate-400 text-sm mb-1">Current</p>
+                    <p className="text-2xl font-bold text-green-400">{house.totalPoints}</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-slate-400 text-sm mb-1">Pending</p>
+                    <p className={`text-xl font-bold ${
+                      house.adminPoints === 0 
+                        ? 'text-slate-500' 
+                        : house.adminPoints > 0 
+                          ? 'text-purple-400' 
+                          : 'text-red-400'
+                    }`}>
+                      {house.adminPoints > 0 ? '+' : ''}{house.adminPoints}
+                    </p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-slate-400 text-sm mb-1">New Total</p>
+                    <p className={`text-2xl font-bold ${
+                      hasPendingChanges ? 'text-blue-400' : 'text-slate-500'
+                    }`}>
+                      {projectedTotal}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <h3 className={`text-2xl font-bold text-${house.color} mb-2`}>
-                {house.name}
-              </h3>
-              
-              {/* Points Display */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-slate-400 text-sm">Points Currently Given</p>
-                  <p className={`text-xl font-bold ${
-                    house.adminPoints > 0 ? 'text-purple-400' : 'text-slate-500'
-                  }`}>
-                    {house.adminPoints}
-                  </p>
+
+              {/* Admin Controls */}
+              <div className="space-y-3">
+                {/* Add Points Buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  {pointOptions.map(points => (
+                    <button
+                      key={`add-${points}`}
+                      onClick={() => handleAddPoints(house.id, points)}
+                      className="py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      +{points}
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Total</p>
-                  <p className="text-xl font-bold text-green-400">{house.totalPoints}</p>
-                </div>
+
+                {/* Subtract Point Button */}
+                <button
+                  onClick={() => handleSubtractPoint(house.id)}
+                  disabled={projectedTotal <= 0}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    projectedTotal <= 0
+                      ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
+                  }`}
+                >
+                  -1 Point
+                </button>
               </div>
             </div>
-
-            {/* Admin Controls */}
-            <div className="space-y-3">
-              {/* Add Points Buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                {pointOptions.map(points => (
-                  <button
-                    key={`add-${points}`}
-                    onClick={() => handleAddPoints(house.id, points)}
-                    className="py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    +{points}
-                  </button>
-                ))}
-              </div>
-
-              {/* Subtract Point Button - Only -1 */}
-              <button
-                onClick={() => handleSubtractPoint(house.id)}
-                disabled={house.adminPoints === 0}
-                className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
-                  house.adminPoints === 0
-                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                -1 Point
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Save Instructions */}
-      {totalPointsGiven > 0 && (
+      {netPendingChanges !== 0 && (
         <div className="glass rounded-2xl p-6 mt-8 text-center border border-green-500/20">
           <div className="flex items-center justify-center space-x-3">
             <span className="text-green-400 text-2xl">💡</span>
             <div>
               <p className="text-green-400 font-semibold">
-                Don't forget to save your scores!
+                Don't forget to save your changes!
               </p>
               <p className="text-slate-400 text-sm mt-1">
-                Click "Save Scores" to add pending points to totals and reset for the next session
+                Click "Save Scores" to apply all pending changes to totals
               </p>
             </div>
           </div>

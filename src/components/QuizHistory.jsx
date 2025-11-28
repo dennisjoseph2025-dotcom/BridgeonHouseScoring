@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { selectQuizHistory, selectHouses, selectUserRole, updateQuizHistoryFromFirebase } from '../store/slices/quizSlice';
-import { firebaseService } from '../services/firebaseService'; // Import the service
+import { 
+  selectQuizHistory, 
+  selectHouses, 
+  selectUserRole, 
+  updateQuizHistoryFromFirebase,
+  startQuizHistoryListener
+} from '../store/slices/quizSlice';
+import { firebaseService } from '../services/firebaseService';
 import toast from 'react-hot-toast';
 
 const QuizHistory = () => {
@@ -11,17 +17,43 @@ const QuizHistory = () => {
   const quizHistory = useSelector(selectQuizHistory);
   const houses = useSelector(selectHouses);
   const userRole = useSelector(selectUserRole);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isAdmin = userRole === 'admin';
 
-  // Get sorted dates (newest first)
-  const sortedDates = Object.keys(quizHistory).sort((a, b) => new Date(b) - new Date(a));
+  // ADD: Start real-time listener for quiz history
+  useEffect(() => {
+    console.log('🔔 Starting quiz history real-time listener');
+    
+    const unsubscribe = firebaseService.listenToQuizHistory((data, error) => {
+      if (error) {
+        console.error('❌ Quiz history listener error:', error);
+        setIsLoading(false);
+        return;
+      }
+      console.log('📡 Quiz history received from Firebase:', data);
+      dispatch(updateQuizHistoryFromFirebase(data));
+      setIsLoading(false);
+    });
+
+    return () => {
+      console.log('🔕 Cleaning up quiz history listener');
+      if (unsubscribe) unsubscribe();
+    };
+  }, [dispatch]);
+
+  // Get sorted dates (newest first) - filter out _lastUpdated
+  const sortedDates = Object.keys(quizHistory)
+    .filter(date => date !== '_lastUpdated')
+    .sort((a, b) => new Date(b) - new Date(a));
 
   // Calculate total quiz points for a house across all dates
   const getTotalQuizPoints = (houseId) => {
-    return Object.values(quizHistory).reduce((total, dayPoints) => {
-      return total + (dayPoints[houseId] || 0);
-    }, 0);
+    return Object.entries(quizHistory)
+      .filter(([date]) => date !== '_lastUpdated')
+      .reduce((total, [date, dayPoints]) => {
+        return total + (dayPoints[houseId] || 0);
+      }, 0);
   };
 
   // Format date for display
@@ -47,15 +79,18 @@ const QuizHistory = () => {
           <button
             onClick={async () => {
               try {
-                const newHistory = { ...quizHistory };
+                // Read current data first
+                const existingResult = await firebaseService.readData('quizHistory');
+                const existingHistory = existingResult.data || {};
+                
+                // Create new history without the deleted date
+                const newHistory = { ...existingHistory };
                 delete newHistory[date];
                 
-                // Update Firebase using the service
+                // Update Firebase
                 const result = await firebaseService.writeData('quizHistory', newHistory);
                 
                 if (result.success) {
-                  // Update local state
-                  dispatch(updateQuizHistoryFromFirebase(newHistory));
                   toast.success('Quiz history deleted from Firebase!', { icon: '🗑️' });
                 } else {
                   toast.error('Failed to delete from Firebase');
@@ -93,12 +128,10 @@ const QuizHistory = () => {
           <button
             onClick={async () => {
               try {
-                // Clear Firebase using the service
+                // Clear Firebase
                 const result = await firebaseService.writeData('quizHistory', {});
                 
                 if (result.success) {
-                  // Update local state
-                  dispatch(updateQuizHistoryFromFirebase({}));
                   toast.success('All quiz history cleared from Firebase!', { icon: '🗑️' });
                 } else {
                   toast.error('Failed to clear Firebase');
@@ -124,6 +157,35 @@ const QuizHistory = () => {
     ));
   };
 
+  // Load initial data on component mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const result = await firebaseService.readData('quizHistory');
+        if (result.success && result.data) {
+          dispatch(updateQuizHistoryFromFirebase(result.data));
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading initial quiz history:', error);
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [dispatch]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto fade-in">
+        <div className="glass rounded-2xl p-12 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-400 text-lg">Loading quiz history...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto fade-in">
       {/* Header */}
@@ -132,6 +194,11 @@ const QuizHistory = () => {
         <p className="text-slate-400 text-lg">
           {isAdmin ? 'Manage weekly quiz performance and history' : 'Weekly quiz performance and point distribution'}
         </p>
+        
+        {/* Debug Info */}
+        <div className="mt-4 text-sm text-slate-500">
+          Showing data from Firebase - {sortedDates.length} date(s) loaded
+        </div>
         
         {/* Admin Controls */}
         {isAdmin && sortedDates.length > 0 && (
@@ -223,7 +290,7 @@ const QuizHistory = () => {
                         {house.name}
                       </h4>
                       <p className="text-2xl font-bold text-blue-400">
-                        {quizHistory[date][house.id] || 0}
+                        {quizHistory[date]?.[house.id] || 0}
                       </p>
                       <p className="text-slate-400 text-xs">Points</p>
                     </div>
@@ -235,7 +302,7 @@ const QuizHistory = () => {
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-400">Total points awarded:</span>
                     <span className="text-blue-400 font-semibold">
-                      {Object.values(quizHistory[date]).reduce((sum, points) => sum + points, 0)}
+                      {Object.values(quizHistory[date] || {}).reduce((sum, points) => sum + points, 0)}
                     </span>
                   </div>
                 </div>

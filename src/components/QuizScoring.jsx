@@ -8,7 +8,8 @@ import {
   clearCurrentQuiz,
   selectHouses, 
   selectScoringHouse,
-  selectCurrentQuizPoints
+  selectCurrentQuizPoints,
+  saveCurrentQuizToFirebase // ADD THIS IMPORT
 } from '../store/slices/quizSlice';
 import toast from 'react-hot-toast';
 
@@ -47,7 +48,19 @@ const QuizScoring = () => {
       duration: 1000
     });
   };
+const debugQuizData = () => {
+  console.log('🔍 Debug Quiz Data:', {
+    currentQuizPoints,
+    housesToScore: housesToScore.map(h => ({ id: h.id, name: h.name })),
+    scoringHouse: scoringHouse?.name,
+    totalPoints: Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0)
+  });
+};
 
+// Call this in your useEffect or add a hidden debug button
+useEffect(() => {
+  debugQuizData();
+}, [currentQuizPoints]);
   const handleSubtractQuizPoint = (houseId) => {
     if (!scoringHouseId) {
       toast.error('Please select a scoring house first');
@@ -70,20 +83,54 @@ const QuizScoring = () => {
     });
   };
 
-  const handleSaveQuiz = () => {
-    const totalPoints = Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0);
-    
-    if (totalPoints === 0) {
-      toast.error('No quiz points to save');
-      return;
-    }
+  // UPDATED: Save to Firebase when saving quiz
+// Add this state to your QuizScoring component
+const [saveMode, setSaveMode] = useState('replace'); // 'replace' or 'add'
 
-    dispatch(saveQuizToHistory());
-    toast.success('Quiz points saved to history!', {
-      icon: '💾',
-      duration: 2000
-    });
-  };
+// Update the handleSaveQuiz function
+const handleSaveQuiz = async () => {
+  const totalPoints = Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0);
+  
+  console.log('💾 Save Quiz Clicked:', {
+    totalPoints,
+    currentQuizPoints,
+    housesWithPoints: Object.keys(currentQuizPoints).filter(id => currentQuizPoints[id] > 0),
+    saveMode
+  });
+
+  if (totalPoints === 0) {
+    toast.error('No quiz points to save');
+    return;
+  }
+
+  try {
+    // Save to Firebase - dispatch without .unwrap()
+    const resultAction = await dispatch(saveCurrentQuizToFirebase(saveMode));
+    
+    // Extract the result from the action
+    const result = resultAction?.payload || resultAction;
+    
+    console.log('📨 Save Result:', result);
+    
+    if (result && result.success) {
+      toast.success(`Quiz points ${saveMode === 'replace' ? 'saved' : 'added'} to history and synced across all devices!`, {
+        icon: '💾',
+        duration: 3000
+      });
+    } else if (result && result.localSave) {
+      toast.success(`Quiz points ${saveMode === 'replace' ? 'saved' : 'added'} locally (Firebase sync unavailable)`, {
+        icon: '💾',
+        duration: 3000
+      });
+    } else {
+      const errorMsg = result?.error || 'Unknown error occurred';
+      toast.error(`Failed to save: ${errorMsg}`);
+    }
+  } catch (error) {
+    console.error('❌ Save Error Details:', error);
+    toast.error(`Error saving quiz points: ${error.message}`);
+  }
+};
 
   const handleClearQuiz = () => {
     dispatch(clearCurrentQuiz());
@@ -138,36 +185,57 @@ const QuizScoring = () => {
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center space-x-4">
-              {/* <div className="text-right">
-                <p className="text-sm text-slate-400">Session Points</p>
-                <p className="text-2xl font-bold text-blue-400">{totalSessionPoints}</p>
-              </div> */}
-              <button
-                onClick={handleSaveQuiz}
-                disabled={totalSessionPoints === 0}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                  totalSessionPoints === 0
-                    ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-                    : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                💾 Save Quiz
-              </button>
-              <button
-                onClick={handleClearQuiz}
-                disabled={totalSessionPoints === 0}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                  totalSessionPoints === 0
-                    ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-                    : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
-                }`}
-              >
-                🗑️ Clear
-              </button>
-            </div>
-          </div>
+          <div className="flex items-center space-x-4">
+  <div className="text-right">
+    <p className="text-sm text-slate-400">Save Mode</p>
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={() => setSaveMode('replace')}
+        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+          saveMode === 'replace' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+        }`}
+      >
+        Replace
+      </button>
+      <button
+        onClick={() => setSaveMode('add')}
+        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+          saveMode === 'add' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+        }`}
+      >
+        Add
+      </button>
+    </div>
+  </div>
+  
+  <button
+    onClick={handleSaveQuiz}
+    disabled={totalSessionPoints === 0}
+    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+      totalSessionPoints === 0
+        ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+        : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
+    }`}
+  >
+    {saveMode === 'replace' ? '💾 Save Quiz' : '➕ Add to Quiz'}
+  </button>
+  
+  <button
+    onClick={handleClearQuiz}
+    disabled={totalSessionPoints === 0}
+    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+      totalSessionPoints === 0
+        ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+        : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
+    }`}
+  >
+    🗑️ Clear
+  </button>
+</div>
         </div>
       </div>
 
@@ -193,12 +261,6 @@ const QuizScoring = () => {
                 <p className="text-slate-400 text-sm">Scoring</p>
                 <p className="text-3xl font-bold text-green-400">{housesToScore.length}</p>
                 <p className="text-slate-400 text-sm">houses</p>
-              </div>
-
-              <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                <p className="text-yellow-400 text-sm">
-                  ⚠️ Cannot score your own house
-                </p>
               </div>
             </div>
 

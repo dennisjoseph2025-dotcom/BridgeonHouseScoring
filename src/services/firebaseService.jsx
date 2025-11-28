@@ -8,25 +8,70 @@ class FirebaseService {
     this.listeners = new Map();
     this.connectionCallbacks = [];
     this.isAuthenticated = false;
+    this.authError = null;
     
     // Initialize anonymous authentication
     this.initializeAuth();
   }
 
-  // Initialize anonymous authentication for write operations
+  async mergeQuizHistoryData(date, newPoints) {
+    try {
+      await this.ensureAuthenticated();
+      
+      // Read current quiz history
+      const currentHistoryResult = await this.readData('quizHistory');
+      const currentHistory = currentHistoryResult.data || {};
+      
+      // Merge the new points with existing data
+      const updatedHistory = {
+        ...currentHistory,
+        [date]: {
+          ...currentHistory[date],
+          ...newPoints
+        }
+      };
+      
+      // Write merged data back
+      const result = await this.writeData('quizHistory', updatedHistory);
+      
+      return {
+        success: true,
+        data: updatedHistory,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error('❌ Error merging quiz history:', error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // Initialize anonymous authentication for write operations - UPDATED
   async initializeAuth() {
     try {
       await signInAnonymously(auth);
       this.isAuthenticated = true;
+      this.authError = null;
       console.log('✅ Firebase anonymous authentication successful');
     } catch (error) {
       console.error('❌ Firebase authentication failed:', error);
       this.isAuthenticated = false;
+      this.authError = error;
+      console.warn('⚠️ Continuing without Firebase authentication - some operations may fail due to security rules');
     }
   }
 
-  // Wait for authentication to be ready
+  // Wait for authentication to be ready - UPDATED
   async ensureAuthenticated() {
+    if (!this.isAuthenticated && this.authError) {
+      // If authentication failed, we'll try to proceed anyway
+      console.warn('⚠️ Authentication failed, proceeding with operations (may fail due to security rules)');
+      return; // Don't throw error, let the operation attempt
+    }
+    
     if (!this.isAuthenticated) {
       await new Promise(resolve => setTimeout(resolve, 500));
       if (!this.isAuthenticated) {
@@ -35,7 +80,7 @@ class FirebaseService {
     }
   }
 
-  // Connection testing methods
+  // Connection testing methods - UPDATED
   async testConnection() {
     try {
       await this.ensureAuthenticated();
@@ -151,15 +196,33 @@ class FirebaseService {
     this.listeners.clear();
   }
 
-  // Data operations
+  // Data operations - UPDATED
   async writeData(path, data) {
     try {
-      const result = await this.updateData(path, data);
+      await this.ensureAuthenticated();
+      const dataRef = ref(database, path);
+      const dataWithMeta = {
+        ...data,
+        _lastUpdated: Date.now()
+      };
+      
+      await set(dataRef, dataWithMeta);
+      
       console.log(`✅ Data written to ${path}:`, data);
-      return result;
+      return {
+        success: true,
+        path,
+        data: dataWithMeta,
+        timestamp: Date.now()
+      };
     } catch (error) {
       console.error(`❌ Error writing to ${path}:`, error);
-      throw error;
+      return {
+        success: false,
+        path,
+        error: error.message,
+        timestamp: Date.now()
+      };
     }
   }
 
@@ -269,6 +332,11 @@ class FirebaseService {
   // Check authentication status
   getAuthStatus() {
     return this.isAuthenticated;
+  }
+
+  // Get authentication error
+  getAuthError() {
+    return this.authError;
   }
 }
 

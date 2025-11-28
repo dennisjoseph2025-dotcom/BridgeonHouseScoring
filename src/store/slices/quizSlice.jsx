@@ -125,21 +125,26 @@ const quizSlice = createSlice({
       state.currentQuizPoints = {};
     },
     // Admin Scoring
-    addAdminPoint: (state, action) => {
+addAdminPoint: (state, action) => {
       const houseId = action.payload;
       const house = state.houses.find(h => h.id === houseId);
       if (house) {
         house.adminPoints += 1;
-        house.totalPoints = house.adminPoints;
       }
     },
     subtractAdminPoint: (state, action) => {
       const houseId = action.payload;
       const house = state.houses.find(h => h.id === houseId);
-      if (house && house.adminPoints > 0) {
-        house.adminPoints -= 1;
-        house.totalPoints = house.adminPoints;
+      if (house) {
+        house.adminPoints -= 1; // Can go negative now
       }
+    },
+    // NEW: Apply admin points to total points (for save operation)
+    applyAdminPoints: (state) => {
+      state.houses.forEach(house => {
+        house.totalPoints += house.adminPoints;
+        house.adminPoints = 0;
+      });
     },
     // Update from Firebase
     updateHousesFromFirebase: (state, action) => {
@@ -284,9 +289,49 @@ export const startFirebaseAuthListener = () => (dispatch) => {
 
   return unsubscribe;
 };
+export const saveAllHousesSingleWrite = () => async (dispatch, getState) => {
+  try {
+    const state = getState().quiz;
+    const houses = state.houses;
+    
+    console.log('⚡ Single-write saving all houses to Firebase');
+    
+    // Single authentication check
+    if (!firebaseService.getAuthStatus()) {
+      console.log('⏳ Waiting for authentication...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
+    // Create a single object with all house data
+    const allHousesData = {};
+    houses.forEach(house => {
+      allHousesData[house.id] = {
+        adminPoints: house.adminPoints,
+        totalPoints: house.totalPoints,
+        name: house.name,
+        _lastUpdated: Date.now()
+      };
+    });
+
+    console.log('📦 Single payload for all houses:', allHousesData);
+
+    // Single write operation for all houses
+    const result = await firebaseService.writeData('houses', allHousesData);
+    
+    if (result.success) {
+      console.log('✅ All houses saved in single write operation');
+      return { success: true, data: result.data };
+    } else {
+      console.error('❌ Single write failed:', result.error);
+      throw new Error(result.error || 'Failed to save houses data');
+    }
+  } catch (error) {
+    console.error('❌ Error in saveAllHousesSingleWrite:', error);
+    throw error;
+  }
+};
 // Enhanced thunk actions for Firebase operations with authentication handling:
-export const saveHouseToFirebase = (house) => async () => {
+export const saveHouseToFirebase = (house) => async (dispatch) => {
   try {
     console.log('🔄 Attempting to save house to Firebase:', house);
     
@@ -341,44 +386,103 @@ export const saveQuizHistoryToFirebase = (quizHistory) => async () => {
   }
 };
 
-export const saveCurrentQuizToFirebase = () => async (dispatch, getState) => {
+export const saveCurrentQuizToFirebase = (mode = 'replace') => async (dispatch, getState) => {
   try {
     const state = getState().quiz;
+    const currentQuizPoints = state.currentQuizPoints;
     
-    // Wait for authentication if needed
-    if (!firebaseService.getAuthStatus()) {
-      console.log('⏳ Waiting for authentication before saving quiz...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Filter out houses with 0 points
+    const housesWithPoints = Object.keys(currentQuizPoints).filter(
+      houseId => currentQuizPoints[houseId] > 0
+    );
+
+    if (housesWithPoints.length === 0) {
+      return { success: false, error: 'No quiz points to save' };
     }
-    
-    // Save quiz history first
+
     const date = new Date().toISOString().split('T')[0];
-    const currentHistory = { ...state.quizHistory };
     
-    if (!currentHistory[date]) {
-      currentHistory[date] = {};
-    }
-    
-    Object.keys(state.currentQuizPoints).forEach(houseId => {
-      if (!currentHistory[date][houseId]) {
-        currentHistory[date][houseId] = 0;
-      }
-      currentHistory[date][houseId] += state.currentQuizPoints[houseId];
+    console.log('🔄 Saving quiz points to Firebase:', {
+      date,
+      points: currentQuizPoints,
+      housesWithPoints,
+      mode
     });
+
+    // Read existing quiz history first
+    const existingResult = await firebaseService.readData('quizHistory');
+    const existingHistory = existingResult.data || {};
     
+    console.log('📊 Existing quiz history:', existingHistory);
+
+    // Create updated history based on mode
+    let updatedHistory;
+    
+    if (mode === 'replace') {
+      // REPLACE the entire day's data
+      updatedHistory = {
+        ...existingHistory,
+        [date]: {
+          ...currentQuizPoints
+        }
+      };
+    } else {
+      // ADD to existing day's data
+      updatedHistory = {
+        ...existingHistory,
+        [date]: {
+          ...existingHistory[date],
+          ...Object.keys(currentQuizPoints).reduce((acc, houseId) => {
+            if (currentQuizPoints[houseId] > 0) {
+              acc[houseId] = (existingHistory[date]?.[houseId] || 0) + currentQuizPoints[houseId];
+            }
+            return acc;
+          }, {})
+        }
+      };
+    }
+
+    console.log('💾 Updated quiz history to save:', updatedHistory);
+
     // Save to Firebase
-    await firebaseService.writeData('quizHistory', currentHistory);
+    const result = await firebaseService.writeData('quizHistory', updatedHistory);
     
-    // Update local state
-    dispatch(saveQuizToHistory());
-    
-    return { success: true };
+    if (result.success) {
+      // Update local state
+      dispatch(updateQuizHistoryFromFirebase(updatedHistory));
+      
+      // Clear current quiz points
+      dispatch(clearCurrentQuiz());
+      
+      console.log(`✅ Quiz points successfully saved to Firebase (${mode} mode)`);
+      return { success: true, data: updatedHistory };
+    } else {
+      console.error('❌ Firebase save failed:', result.error);
+      
+      // Fallback: save locally
+      dispatch(saveQuizToHistory());
+      dispatch(clearCurrentQuiz());
+      
+      return { 
+        success: false, 
+        error: result.error,
+        localSave: true
+      };
+    }
   } catch (error) {
-    console.error('Error saving quiz to Firebase:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Error in saveCurrentQuizToFirebase:', error);
+    
+    // Last resort: save locally
+    dispatch(saveQuizToHistory());
+    dispatch(clearCurrentQuiz());
+    
+    return { 
+      success: false, 
+      error: error.message,
+      localSave: true
+    };
   }
 };
-
 export const resetAllScoresFirebase = () => async (dispatch) => {
   try {
     // Wait for authentication if needed
@@ -387,19 +491,20 @@ export const resetAllScoresFirebase = () => async (dispatch) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    // Reset all houses in Firebase
+    // Reset all houses in Firebase - ONLY reset adminPoints and totalPoints, keep quiz history
     const resetPromises = houses.map(house => 
       firebaseService.updateHousePoints(house.id, {
         adminPoints: 0,
         totalPoints: 0,
         name: house.name
+        // Don't touch quizHistory here
       })
     );
     
     await Promise.all(resetPromises);
     
-    // Reset quiz history
-    await firebaseService.writeData('quizHistory', {});
+    // REMOVE this line that resets quiz history:
+    // await firebaseService.writeData('quizHistory', {});
     
     // Update local state
     dispatch(resetAllScores());
@@ -476,6 +581,7 @@ export const {
   clearCurrentQuiz,
   addAdminPoint,
   subtractAdminPoint,
+  applyAdminPoints,   // ADD THIS
   updateHousesFromFirebase,
   updateQuizHistoryFromFirebase,
   setFirebaseConnected,
@@ -487,7 +593,6 @@ export const {
   setTimer,
   resetAllScores
 } = quizSlice.actions;
-
 export const selectHouses = (state) => state.quiz.houses;
 export const selectScoringHouse = (state) => state.quiz.scoringHouse;
 export const selectCurrentUser = (state) => state.quiz.currentUser;
