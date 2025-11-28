@@ -199,12 +199,7 @@ const HouseTargetSelection = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full sm:w-auto">
-            <button
-              onClick={() => navigate('/quiz-scoring')}
-              className="px-4 py-2 md:px-6 md:py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-all duration-200 text-sm md:text-base mb-2 sm:mb-0"
-            >
-              ⭐ Quiz Scoring
-            </button>
+
             <button
               onClick={handleStartScoring}
               disabled={selectedTargets.length === 0}

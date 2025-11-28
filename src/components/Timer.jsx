@@ -269,12 +269,7 @@ const Timer = () => {
           >
             🎯 Back to Scoring
           </button>
-          <button
-            onClick={() => navigate('/leaderboard')}
-            className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm"
-          >
-            🏆 Leaderboard
-          </button>
+          
         </div>
       </div>
     </div>

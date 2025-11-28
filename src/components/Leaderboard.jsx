@@ -101,20 +101,7 @@ const Leaderboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 mt-6 md:mt-8 pt-6 border-t border-slate-700">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-          >
-            ← Back
-          </button>
-          <button
-            onClick={() => navigate('/admin-scoring')}
-            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-          >
-            👑 Admin Scoring
-          </button>
-        </div>
+        
       </div>
     </div>
   );
