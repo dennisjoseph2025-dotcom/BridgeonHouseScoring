@@ -72,7 +72,7 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       {/* Fixed Header - Darker Background */}
       <header className="bg-slate-900/95 border-b border-slate-700 fixed top-0 left-0 right-0 z-50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
@@ -98,7 +98,7 @@ const Layout = ({ children }) => {
               <div className="hidden md:flex items-center space-x-4">
                 <div className="text-right">
                   <p className="text-sm text-slate-400">
-                    {userRole === 'admin' ? 'Administrator' : `Scoring By: ${scoringHouse?.name || 'No House'}`}
+                    {userRole === 'admin' ? 'Administrator' : `Scoring as: ${scoringHouse?.name || 'No House'}`}
                   </p>
                   {/* <p className="text-white font-medium">{currentUser.displayName}</p> */}
                   <div className="flex items-center space-x-1 mt-1">
@@ -170,9 +170,10 @@ const Layout = ({ children }) => {
                 <div className="mb-4 p-3 bg-slate-700/80 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-slate-200">
-                        {userRole === 'admin' ? 'Administrator' : `Scoring By: ${scoringHouse?.name || 'No House'}`}
+                      <p className="text-sm text-slate-400">
+                        {userRole === 'admin' ? 'Administrator' : `Scoring as: ${scoringHouse?.name || 'No House'}`}
                       </p>
+                      <p className="text-white font-medium">{currentUser.displayName}</p>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -207,13 +208,15 @@ const Layout = ({ children }) => {
         </div>
       </header>
 
-      {/* Main Content with padding for fixed header */}
-      <main className="container mx-auto px-4 pt-24 pb-6 sm:pt-28 sm:pb-8">
-        {children}
-      </main>
+      {/* Main Content Area - This will grow to push footer down */}
+      <div className="flex-1 pt-16">
+        <main className="container mx-auto px-4 py-6 sm:py-8">
+          {children}
+        </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-700">
+      {/* Footer - Always at bottom */}
+      <footer className="bg-slate-900 border-t border-slate-700 mt-auto">
         <div className="container mx-auto px-4 py-4 sm:py-6 text-center">
           <p className="text-slate-400 text-sm sm:text-base">
             BRIDGEON House Cup System • Magical Learning Experience

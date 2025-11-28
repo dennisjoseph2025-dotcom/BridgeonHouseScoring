@@ -220,27 +220,7 @@ const HouseTargetSelection = () => {
         </div>
       </div>
 
-      {/* Quick Navigation */}
-      <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-2 md:space-x-4 mt-6 md:mt-8">
-        <button
-          onClick={() => navigate('/leaderboard')}
-          className="px-4 py-2 md:px-6 md:py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-        >
-          🏆 Leaderboard
-        </button>
-        <button
-          onClick={() => navigate('/timer')}
-          className="px-4 py-2 md:px-6 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-        >
-          ⏱️ Timer
-        </button>
-        <button
-          onClick={() => navigate('/quiz-history')}
-          className="px-4 py-2 md:px-6 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-        >
-          📊 History
-        </button>
-      </div>
+      
     </div>
   );
 };

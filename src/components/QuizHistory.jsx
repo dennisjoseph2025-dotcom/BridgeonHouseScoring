@@ -348,32 +348,6 @@ const QuizHistory = () => {
           </div>
         )}
       </div>
-
-      {/* Navigation */}
-      <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4 mt-6 md:mt-8">
-        <button
-          onClick={() => navigate('/leaderboard')}
-          className="px-4 py-3 md:px-6 md:py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-        >
-          🏆 View Leaderboard
-        </button>
-        
-        {isAdmin ? (
-          <button
-            onClick={() => navigate('/admin-scoring')}
-            className="px-4 py-3 md:px-6 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-          >
-            👑 Admin Scoring
-          </button>
-        ) : (
-          <button
-            onClick={() => navigate('/quiz-scoring')}
-            className="px-4 py-3 md:px-6 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors text-sm md:text-base"
-          >
-            ⭐ Quiz Scoring
-          </button>
-        )}
-      </div>
     </div>
   );
 };
