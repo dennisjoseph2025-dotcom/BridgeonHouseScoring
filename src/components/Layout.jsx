@@ -44,9 +44,9 @@ const Layout = ({ children }) => {
   // Combine navigation items based on user role
   const getNavItems = () => {
     if (userRole === 'admin') {
-      return [...baseNavItems, ...adminNavItems];
+      return [...adminNavItems, ...baseNavItems];
     } else if (userRole === 'house') {
-      return [...baseNavItems, ...houseUserNavItems];
+      return [...houseUserNavItems, ...baseNavItems ];
     }
     return baseNavItems;
   };
