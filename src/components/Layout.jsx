@@ -10,6 +10,7 @@ import {
   selectFirebaseConnected,
   logoutUser 
 } from '../store/slices/quizSlice';
+import { getAuth, signOut } from 'firebase/auth';
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -56,11 +57,17 @@ const Layout = ({ children }) => {
   // Get the scoring house object to display proper name
   const scoringHouse = houses.find(h => h.id === scoringHouseId);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    localStorage.removeItem('selectedTargets');
-    navigate('/login');
-    setIsMobileMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth); // Sign out from Firebase
+      dispatch(logoutUser());
+      localStorage.removeItem('selectedTargets');
+      navigate('/login');
+      setIsMobileMenuOpen(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const toggleMobileMenu = () => {
