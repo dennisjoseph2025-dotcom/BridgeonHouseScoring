@@ -26,7 +26,7 @@ const AdminScoring = () => {
       }
 
       toast.success(`+${points} pending points to ${house.name}`, {
-        icon: '👑',
+        icon: '🔺',
         duration: 1500
       });
     } catch (error) {
@@ -37,12 +37,6 @@ const AdminScoring = () => {
 
   const handleSubtractPoint = (houseId) => {
     const house = houses.find(h => h.id === houseId);
-    const currentTotal = house.totalPoints + house.adminPoints;
-
-    // if (currentTotal <= 0) {
-    //   toast.error(`${house.name} has no points to subtract`);
-    //   return;
-    // }
 
     try {
       // Update local state (only adminPoints - can go negative)
@@ -126,6 +120,9 @@ const AdminScoring = () => {
   // Calculate net pending changes (can be positive or negative)
   const netPendingChanges = houses.reduce((sum, house) => sum + house.adminPoints, 0);
 
+  // Check if any house has pending changes
+  const hasPendingChanges = houses.some(house => house.adminPoints !== 0);
+
   // Calculate what the total would be after applying pending changes
   const getProjectedTotal = (house) => house.totalPoints + house.adminPoints;
 
@@ -152,7 +149,12 @@ const AdminScoring = () => {
           <div className="flex space-x-3">
             <button
               onClick={handleSaveScores}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl`}
+              disabled={!hasPendingChanges}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                hasPendingChanges
+                  ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
+                  : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+              }`}
             >
               💾 Save Scores
             </button>
