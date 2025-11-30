@@ -1,11 +1,11 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { 
-  addAdminPoint, 
-  subtractAdminPoint, 
+import {
+  addAdminPoint,
+  subtractAdminPoint,
   applyAdminPoints,
-  selectHouses, 
+  selectHouses,
   resetAllScoresFirebase,
   saveAllHousesSingleWrite // ADD THIS IMPORT
 } from '../store/slices/quizSlice';
@@ -18,13 +18,13 @@ const AdminScoring = () => {
 
   const handleAddPoints = (houseId, points) => {
     const house = houses.find(h => h.id === houseId);
-    
+
     try {
       // Update local state for each point (only adminPoints, not totalPoints)
       for (let i = 0; i < points; i++) {
         dispatch(addAdminPoint(houseId));
       }
-      
+
       toast.success(`+${points} pending points to ${house.name}`, {
         icon: '👑',
         duration: 1500
@@ -38,16 +38,16 @@ const AdminScoring = () => {
   const handleSubtractPoint = (houseId) => {
     const house = houses.find(h => h.id === houseId);
     const currentTotal = house.totalPoints + house.adminPoints;
-    
-    if (currentTotal <= 0) {
-      toast.error(`${house.name} has no points to subtract`);
-      return;
-    }
-    
+
+    // if (currentTotal <= 0) {
+    //   toast.error(`${house.name} has no points to subtract`);
+    //   return;
+    // }
+
     try {
       // Update local state (only adminPoints - can go negative)
       dispatch(subtractAdminPoint(houseId));
-      
+
       toast.error(`-1 pending point from ${house.name}`, {
         icon: '🔻',
         duration: 1500
@@ -58,47 +58,39 @@ const AdminScoring = () => {
     }
   };
 
- const handleSaveScores = async () => {
-  try {
-    // Check if any house would have negative total points after applying changes
-    const wouldHaveNegative = houses.some(house => 
-      house.totalPoints + house.adminPoints < 0
-    );
-    
-    if (wouldHaveNegative) {
-      toast.error('Cannot save: Some houses would have negative total points');
-      return;
-    }
-
-    // Show loading state immediately
-    const saveToast = toast.loading('Saving scores...');
-
-    // Apply admin points to total points
-    dispatch(applyAdminPoints());
-    
+  const handleSaveScores = async () => {
     try {
-      // Use the ultra-fast single write approach
-      const result = await dispatch(saveAllHousesSingleWrite());
-      
-      if (result.success) {
-        toast.success('Scores saved successfully!', {
-          icon: '💾',
-          duration: 2000
-        });
-      } else {
-        throw new Error(result.error || 'Failed to save scores');
+
+
+      // Show loading state immediately
+      const saveToast = toast.loading('Saving scores...');
+
+      // Apply admin points to total points
+      dispatch(applyAdminPoints());
+
+      try {
+        // Use the ultra-fast single write approach
+        const result = await dispatch(saveAllHousesSingleWrite());
+
+        if (result.success) {
+          toast.success('Scores saved successfully!', {
+            icon: '💾',
+            duration: 2000
+          });
+        } else {
+          throw new Error(result.error || 'Failed to save scores');
+        }
+      } catch (error) {
+        console.error('❌ Error saving scores:', error);
+        toast.error('Failed to save scores to database');
+      } finally {
+        toast.dismiss(saveToast);
       }
     } catch (error) {
-      console.error('❌ Error saving scores:', error);
-      toast.error('Failed to save scores to database');
-    } finally {
-      toast.dismiss(saveToast);
+      console.error('❌ Error in save operation:', error);
+      toast.error('Failed to process scores');
     }
-  } catch (error) {
-    console.error('❌ Error in save operation:', error);
-    toast.error('Failed to process scores');
-  }
-};
+  };
 
   const handleResetScores = () => {
     toast((t) => (
@@ -154,30 +146,13 @@ const AdminScoring = () => {
               <p className="text-slate-400">
                 Award or deduct house points for overall performance
               </p>
-              {netPendingChanges !== 0 && (
-                <div className="flex items-center space-x-2 mt-2">
-                  <div className={`w-2 h-2 rounded-full animate-pulse ${
-                    netPendingChanges > 0 ? 'bg-green-400' : 'bg-red-400'
-                  }`}></div>
-                  <span className={`text-sm font-medium ${
-                    netPendingChanges > 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {netPendingChanges > 0 ? '+' : ''}{netPendingChanges} pending changes - Click "Save Scores" to apply
-                  </span>
-                </div>
-              )}
             </div>
           </div>
-          
+
           <div className="flex space-x-3">
             <button
               onClick={handleSaveScores}
-              disabled={netPendingChanges === 0}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                netPendingChanges === 0
-                  ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
-              }`}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl`}
             >
               💾 Save Scores
             </button>
@@ -196,13 +171,13 @@ const AdminScoring = () => {
         {houses.map(house => {
           const projectedTotal = getProjectedTotal(house);
           const hasPendingChanges = house.adminPoints !== 0;
-          
+
           return (
             <div key={house.id} className="glass-dark rounded-2xl p-6">
               <div className="text-center mb-6">
                 <div className={`w-20 h-20 ${house.bgColor} rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg`}>
-                  <img 
-                    src={house.icon} 
+                  <img
+                    src={house.icon}
                     alt={house.name}
                     className="w-12 h-12 object-contain"
                   />
@@ -210,32 +185,30 @@ const AdminScoring = () => {
                 <h3 className={`text-2xl font-bold text-${house.color} mb-4`}>
                   {house.name}
                 </h3>
-                
+
                 {/* Points Display - Horizontal Layout */}
                 <div className="flex justify-between items-center mb-4 p-4 bg-slate-700/30 rounded-xl">
                   <div className="text-center">
                     <p className="text-slate-400 text-sm mb-1">Current</p>
                     <p className="text-2xl font-bold text-green-400">{house.totalPoints}</p>
                   </div>
-                  
+
                   <div className="text-center">
                     <p className="text-slate-400 text-sm mb-1">Pending</p>
-                    <p className={`text-xl font-bold ${
-                      house.adminPoints === 0 
-                        ? 'text-slate-500' 
-                        : house.adminPoints > 0 
-                          ? 'text-purple-400' 
-                          : 'text-red-400'
-                    }`}>
+                    <p className={`text-xl font-bold ${house.adminPoints === 0
+                      ? 'text-slate-500'
+                      : house.adminPoints > 0
+                        ? 'text-purple-400'
+                        : 'text-red-400'
+                      }`}>
                       {house.adminPoints > 0 ? '+' : ''}{house.adminPoints}
                     </p>
                   </div>
-                  
+
                   <div className="text-center">
                     <p className="text-slate-400 text-sm mb-1">New Total</p>
-                    <p className={`text-2xl font-bold ${
-                      hasPendingChanges ? 'text-blue-400' : 'text-slate-500'
-                    }`}>
+                    <p className={`text-2xl font-bold ${hasPendingChanges ? 'text-blue-400' : 'text-slate-500'
+                      }`}>
                       {projectedTotal}
                     </p>
                   </div>
@@ -260,12 +233,8 @@ const AdminScoring = () => {
                 {/* Subtract Point Button */}
                 <button
                   onClick={() => handleSubtractPoint(house.id)}
-                  disabled={projectedTotal <= 0}
-                  className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
-                    projectedTotal <= 0
-                      ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                      : 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl'
-                  }`}
+
+                  className={`w-full py-3 rounded-lg font-semibold transition-all duration-200  bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl`}
                 >
                   -1 Point
                 </button>
@@ -276,10 +245,9 @@ const AdminScoring = () => {
       </div>
 
       {/* Save Instructions */}
-      {netPendingChanges !== 0 && (
+
         <div className="glass rounded-2xl p-6 mt-8 text-center border border-green-500/20">
           <div className="flex items-center justify-center space-x-3">
-            <span className="text-green-400 text-2xl">💡</span>
             <div>
               <p className="text-green-400 font-semibold">
                 Don't forget to save your changes!
@@ -290,7 +258,6 @@ const AdminScoring = () => {
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 };
