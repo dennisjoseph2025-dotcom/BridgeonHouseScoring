@@ -108,7 +108,7 @@ const Timer = () => {
     }
   };
 
-  const quickTimeButtons = [60, 120, 180, 240, 300]; // 1m, 2m, 3m, 4m, 5m
+  const quickTimeButtons = [30,60, 120, 180,300];
 
   // Get status text based on current state
   const getStatusText = () => {

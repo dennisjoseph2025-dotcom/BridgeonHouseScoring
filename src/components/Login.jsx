@@ -86,15 +86,15 @@ const Login = () => {
     setPassword(quickPassword);
   };
 
-  // Quick login credentials
-  const quickLogins = [
-    { role: '👑 Admin', email: 'admin@bridgeon.com', password: 'admin123Head', color: 'bg-purple-500 hover:bg-purple-600' },
-    { role: '🦁 Gryffindor', email: 'gryffindor@bridgeon.com', password: 'gryffindor123red', color: 'bg-red-500 hover:bg-red-600' },
-    { role: '🐍 Slytherin', email: 'slytherin@bridgeon.com', password: 'slytherin123green', color: 'bg-green-500 hover:bg-green-600' },
-    { role: '🦡 Hufflepuff', email: 'hufflepuff@bridgeon.com', password: 'hufflepuff123yellow', color: 'bg-yellow-500 hover:bg-yellow-600' },
-    { role: '🦅 Ravenclaw', email: 'ravenclaw@bridgeon.com', password: 'ravenclaw123blue', color: 'bg-blue-500 hover:bg-blue-600' },
-    { role: '📸 Media', email: 'media@bridgeon.com', password: 'media123white', color: 'bg-indigo-500 hover:bg-indigo-600' }
-  ];
+  // // Quick login credentials
+  // const quickLogins = [
+  //   { role: '👑 Admin', email: 'admin@bridgeon.com', password: 'admin123Head', color: 'bg-purple-500 hover:bg-purple-600' },
+  //   { role: '🦁 Gryffindor', email: 'gryffindor@bridgeon.com', password: 'gryffindor123red', color: 'bg-red-500 hover:bg-red-600' },
+  //   { role: '🐍 Slytherin', email: 'slytherin@bridgeon.com', password: 'slytherin123green', color: 'bg-green-500 hover:bg-green-600' },
+  //   { role: '🦡 Hufflepuff', email: 'hufflepuff@bridgeon.com', password: 'hufflepuff123yellow', color: 'bg-yellow-500 hover:bg-yellow-600' },
+  //   { role: '🦅 Ravenclaw', email: 'ravenclaw@bridgeon.com', password: 'ravenclaw123blue', color: 'bg-blue-500 hover:bg-blue-600' },
+  //   { role: '📸 Media', email: 'media@bridgeon.com', password: 'media123white', color: 'bg-indigo-500 hover:bg-indigo-600' }
+  // ];
 
   // If already logged in, show loading screen
   if (currentUser) {
@@ -136,7 +136,7 @@ const Login = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-              <span className="text-2xl text-white">🏰</span>
+              <span className="text-5xl font-bold text-white">B</span>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Bridgeon House Cup</h1>
             <p className="text-slate-400">Sign in to your account</p>
@@ -187,7 +187,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Quick Login Buttons */}
+          {/* Quick Login Buttons
           <div className="mt-8">
             <h3 className="text-slate-400 text-sm font-medium mb-3 text-center">
               Quick Sign In
@@ -204,7 +204,7 @@ const Login = () => {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Instructions */}
           <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
