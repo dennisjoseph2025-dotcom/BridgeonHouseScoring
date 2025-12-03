@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { 
-  selectCurrentUser, 
-  selectUserRole, 
-  setCurrentUser, 
+import {
+  selectCurrentUser,
+  selectUserRole,
+  setCurrentUser,
   logoutUser,
   setFirebaseConnected,
-  startHouseListener, 
+  startHouseListener,
   startQuizHistoryListener
 } from './store/slices/quizSlice';
 import { firebaseService } from './services/firebaseService';
@@ -77,11 +78,11 @@ function AppContent() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={
-        currentUser ? 
-          (userRole === 'admin' ? 
-            <Navigate to="/admin-scoring" replace /> : 
+        currentUser ?
+          (userRole === 'admin' ?
+            <Navigate to="/admin-scoring" replace /> :
             <Navigate to="/select-targets" replace />
-          ) : 
+          ) :
           <Navigate to="/login" replace />
       } />
       <Route path="/select-targets" element={
@@ -164,7 +165,7 @@ function App() {
         dispatch(startHouseListener());
         dispatch(startQuizHistoryListener());
         dispatch(setFirebaseConnected(true));
-        
+
         console.log('✅ User authenticated:', user.email);
       } else {
         // User is signed out
@@ -187,9 +188,51 @@ function App() {
   }, [dispatch]);
 
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <>
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1f2937',
+            color: '#fff',
+            border: '1px solid #374151',
+            borderRadius: '0.75rem',
+            padding: '16px',
+            fontSize: '14px',
+          },
+          success: {
+            duration: 3000,
+            style: {
+              background: '#059669',
+              border: '1px solid #10b981',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#059669',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#dc2626',
+              border: '1px solid #ef4444',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#dc2626',
+            },
+          },
+        }}
+      />
+      <Router>
+        <AppContent />
+      </Router>
+    </>
   );
 }
 
