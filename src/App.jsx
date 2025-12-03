@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Toaster } from 'react-hot-toast';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import {
   selectCurrentUser,
@@ -189,46 +188,6 @@ function App() {
 
   return (
     <>
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-        gutter={8}
-        containerClassName=""
-        containerStyle={{}}
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#1f2937',
-            color: '#fff',
-            border: '1px solid #374151',
-            borderRadius: '0.75rem',
-            padding: '16px',
-            fontSize: '14px',
-          },
-          success: {
-            duration: 3000,
-            style: {
-              background: '#059669',
-              border: '1px solid #10b981',
-            },
-            iconTheme: {
-              primary: '#fff',
-              secondary: '#059669',
-            },
-          },
-          error: {
-            duration: 4000,
-            style: {
-              background: '#dc2626',
-              border: '1px solid #ef4444',
-            },
-            iconTheme: {
-              primary: '#fff',
-              secondary: '#dc2626',
-            },
-          },
-        }}
-      />
       <Router>
         <AppContent />
       </Router>

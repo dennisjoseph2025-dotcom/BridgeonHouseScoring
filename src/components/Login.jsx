@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setCurrentUser, selectHouses, selectCurrentUser, selectUserRole } from '../store/slices/quizSlice';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -56,8 +56,10 @@ const Login = () => {
         duration: 2000
       });
 
-      // Redirect based on role
-      navigate(isAdmin ? '/admin-scoring' : '/select-targets');
+      // Add delay before redirect to see success toast
+      setTimeout(() => {
+        navigate(isAdmin ? '/admin-scoring' : '/select-targets');
+      }, 1000);
 
     } catch (error) {
       console.error('Login error:', error);
@@ -71,7 +73,9 @@ const Login = () => {
         errorMessage = 'Wrong password. Please try again.';
       }
       
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        duration: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -113,86 +117,104 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="glass rounded-2xl p-8 w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-            <span className="text-2xl text-white">🏰</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Bridgeon House Cup</h1>
-          <p className="text-slate-400">Sign in to your account</p>
-        </div>
-
-        {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-slate-400 text-sm font-medium mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              placeholder="your-email@bridgeon.com"
-              required
-            />
+    <>
+      {/* Toaster only for Login page */}
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1e293b',
+            color: '#fff',
+            border: '1px solid #475569',
+          },
+        }}
+      />
+      
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+        <div className="glass rounded-2xl p-8 w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+              <span className="text-2xl text-white">🏰</span>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">Bridgeon House Cup</h1>
+            <p className="text-slate-400">Sign in to your account</p>
           </div>
 
-          <div>
-            <label className="block text-slate-400 text-sm font-medium mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              placeholder="Enter password"
-              required
-            />
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="your-email@bridgeon.com"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="Enter password"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 ${
+                isLoading
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl'
+              }`}
+            >
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          {/* Quick Login Buttons */}
+          <div className="mt-8">
+            <h3 className="text-slate-400 text-sm font-medium mb-3 text-center">
+              Quick Sign In
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {quickLogins.map((cred, index) => (
+                <button
+                  key={index}
+                  onClick={() => quickLogin(cred.email, cred.password)}
+                  className={`py-2 ${cred.color} text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={isLoading}
+                >
+                  {cred.role}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 ${
-              isLoading
-                ? 'bg-gray-500 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl'
-            }`}
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        {/* Quick Login Buttons */}
-        <div className="mt-8">
-          <h3 className="text-slate-400 text-sm font-medium mb-3 text-center">
-            Quick Sign In
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {quickLogins.map((cred, index) => (
-              <button
-                key={index}
-                onClick={() => quickLogin(cred.email, cred.password)}
-                className={`py-2 ${cred.color} text-white rounded-lg text-sm font-medium transition-colors`}
-              >
-                {cred.role}
-              </button>
-            ))}
+          {/* Instructions */}
+          <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
+            <p className="text-slate-400 text-sm text-center">
+              Use your @bridgeon.com email and password to sign in
+            </p>
           </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
-          <p className="text-slate-400 text-sm text-center">
-            Use your @bridgeon.com email and password to sign in
-          </p>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
