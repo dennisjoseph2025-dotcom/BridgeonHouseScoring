@@ -3,17 +3,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
-  selectScoringHouse, 
   selectHouses, 
   selectCurrentUser, 
   selectUserRole,
   selectFirebaseConnected,
   logoutUser,
-  selectScoringSessionActive,
-  selectActiveScoringHouseId,
-  selectScoringSessionStartTime,
-  endScoringSession,
-  selectCanCurrentUserScore,
   selectCurrentUserHouse,
   selectScoringControl,
 } from '../store/slices/quizSlice';
@@ -23,22 +17,17 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const scoringHouseId = useSelector(selectScoringHouse);
   const houses = useSelector(selectHouses);
   const currentUser = useSelector(selectCurrentUser);
   const userRole = useSelector(selectUserRole);
   const firebaseConnected = useSelector(selectFirebaseConnected);
-  const scoringSessionActive = useSelector(selectScoringSessionActive);
-  const activeScoringHouseId = useSelector(selectActiveScoringHouseId);
-  const scoringSessionStartTime = useSelector(selectScoringSessionStartTime);
-  const canCurrentUserScore = useSelector(selectCanCurrentUserScore);
   const currentUserHouse = useSelector(selectCurrentUserHouse);
   const scoringControl = useSelector(selectScoringControl);
   
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [elapsedTime, setElapsedTime] = useState('');
 
-  // Update elapsed time every minute for scoring session - UPDATED TO USE SCORING CONTROL
+  // Update elapsed time every minute for scoring session
   useEffect(() => {
     if (!scoringControl.activeHouseId || !scoringControl.scoringSessionStartTime) {
       setElapsedTime('');
@@ -65,12 +54,7 @@ const Layout = ({ children }) => {
     return () => clearInterval(interval);
   }, [scoringControl.activeHouseId, scoringControl.scoringSessionStartTime]);
 
-  // Check if current user is the scoring house - UPDATED TO USE SCORING CONTROL
-  const isCurrentUserScoringHouse = currentUserHouse && 
-    scoringControl.status === 'active' && 
-    currentUserHouse.id === scoringControl.activeHouseId;
-
-  // Get the currently scoring house object - UPDATED TO USE SCORING CONTROL
+  // Get the currently scoring house object
   const activeScoringHouse = houses.find(h => h.id === scoringControl.activeHouseId);
 
   // Base navigation items for all users
@@ -97,7 +81,7 @@ const Layout = ({ children }) => {
     { path: '/scoring-control', label: 'Scoring Control', icon: '🎮' },
   ];
 
-  // Combine navigation items based on user role and scoring session - FIXED LOGIC
+  // Combine navigation items based on user role and scoring session
   const getNavItems = () => {
     if (userRole === 'admin') {
       return [...adminNavItems, ...baseNavItems];
@@ -122,31 +106,25 @@ const Layout = ({ children }) => {
 
   const navItems = getNavItems();
 
-  // Get the scoring house object to display proper name
-  const scoringHouse = houses.find(h => h.id === scoringHouseId);
-
   const handleLogout = async () => {
     try {
       const auth = getAuth();
-      
-      // Note: We don't end scoring session on logout anymore since admin controls it
-      
       await signOut(auth);
       dispatch(logoutUser());
       localStorage.removeItem('selectedTargets');
       navigate('/login');
-      setIsMobileMenuOpen(false);
+      setIsMenuOpen(false);
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
-  const closeMobileMenu = () => {
-    setIsMobileMenu(false);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
   };
 
   // Check if scoring control is active
@@ -154,48 +132,44 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-      {/* Fixed Header - Darker Background */}
+      {/* Fixed Header - Always show minimal content */}
       <header className="bg-slate-900/95 border-b border-slate-700 fixed top-0 left-0 right-0 z-50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          {/* Top Bar - Logo and Mobile Menu Button */}
+        <div className="container mx-auto px-4 py-3">
+          {/* Minimal Header Content - Always visible */}
           <div className="flex items-center justify-between">
+            {/* Left: Logo and BRIDGEON */}
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">B</span>
               </div>
-              {/* Mobile BRIDGEON text */}
-              <div className="block sm:hidden">
+              <div>
                 <h1 className="text-lg font-semibold text-white">BRIDGEON</h1>
-              </div>
-              {/* Desktop text */}
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-semibold text-white">BRIDGEON</h1>
-                <p className="text-sm text-slate-400">House Cup Quiz System</p>
+                <p className="text-xs text-slate-400 hidden sm:block">House Cup Quiz System</p>
               </div>
             </div>
 
-            {/* Current Scoring Display - Desktop */}
+            {/* Center: Current Scoring Display (when active) */}
             {isScoringControlActive && activeScoringHouse && (
-              <div className="hidden md:flex items-center space-x-3 bg-linear-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg px-4 py-2 mr-4">
+              <div className="hidden md:flex items-center space-x-2 bg-linear-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg px-3 py-1.5 mx-2">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-8 h-8 ${activeScoringHouse.bgColor} rounded-lg flex items-center justify-center`}>
+                  <div className={`w-7 h-7 ${activeScoringHouse.bgColor} rounded-lg flex items-center justify-center`}>
                     <img 
                       src={activeScoringHouse.icon} 
                       alt={activeScoringHouse.name}
-                      className="w-5 h-5 object-contain"
+                      className="w-4 h-4 object-contain"
                     />
                   </div>
                   <div className="text-left">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-slate-400">Currently Scoring:</span>
-                      <span className={`text-sm font-bold text-${activeScoringHouse.color}`}>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-xs text-slate-400">Scoring:</span>
+                      <span className={`text-xs font-bold text-${activeScoringHouse.color}`}>
                         {activeScoringHouse.name}
                       </span>
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                     </div>
                     {elapsedTime && (
                       <div className="text-xs text-slate-500">
-                        Active for: <span className="text-green-400 font-medium">{elapsedTime}</span>
+                        <span className="text-green-400 font-medium">{elapsedTime}</span>
                       </div>
                     )}
                   </div>
@@ -203,88 +177,35 @@ const Layout = ({ children }) => {
               </div>
             )}
 
-            {/* User Display - Desktop */}
-            {currentUser && (
-              <div className="hidden md:flex items-center space-x-4">
-                <div className="text-right">
-                  <p className="text-sm text-slate-400">
-                    {userRole === 'admin' 
-                      ? 'Administrator' 
-                      : `Logged in as: ${currentUserHouse?.name || 'House'}`
-                    }
-                  </p>
-                  {isScoringControlActive && userRole === 'house' && (
-                    <p className={`text-xs mt-1 ${
-                      currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
-                        ? 'text-green-400' 
-                        : 'text-blue-400'
-                    }`}>
-                      {currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
-                        ? '🎤 Quiz Conductor' 
-                        : '🔊 Participant'
-                      }
-                    </p>
-                  )}
-                  <div className="flex items-center space-x-1 mt-1">
-                    <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-xs text-slate-400">
-                      {firebaseConnected ? 'Connected' : 'Offline'}
-                    </span>
-                  </div>
+            {/* Right: User Status, Menu Button, and Logout */}
+            <div className="flex items-center space-x-2">
+              {/* Firebase Connection Status */}
+              {currentUser && (
+                <div className="hidden sm:flex items-center space-x-1 mr-2">
+                  <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-xs text-slate-400">
+                    {firebaseConnected ? 'Connected' : 'Offline'}
+                  </span>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+              )}
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                    location.pathname === item.path
-                      ? 'bg-blue-600 text-white border border-blue-700'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              ))}
-            </nav>
-
-            {/* Mobile Menu Button */}
-            <div className="flex items-center space-x-2 lg:hidden">
-              {/* Mobile Current Scoring Indicator */}
+              {/* Mobile Current Scoring Indicator (when active) */}
               {isScoringControlActive && activeScoringHouse && (
-                <div className="hidden sm:flex items-center space-x-1 bg-green-500/20 border border-green-500/30 rounded px-2 py-1 mr-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="sm:hidden flex items-center space-x-1 bg-green-500/20 border border-green-500/30 rounded px-2 py-1 mr-1">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
                   <span className="text-xs text-green-400 font-medium">
                     {activeScoringHouse.name}
                   </span>
                 </div>
               )}
-              
-              {currentUser && (
-                <div className="flex items-center space-x-2 mr-2">
-                  <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-xs text-slate-400 hidden sm:block">
-                    {firebaseConnected ? 'Connected' : 'Offline'}
-                  </span>
-                </div>
-              )}
-              
+
+              {/* Menu Button */}
               <button
-                onClick={toggleMobileMenu}
+                onClick={toggleMenu}
                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                aria-label="Open menu"
               >
-                {isMobileMenuOpen ? (
+                {isMenuOpen ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -294,15 +215,25 @@ const Layout = ({ children }) => {
                   </svg>
                 )}
               </button>
+
+              {/* Logout Button */}
+              {currentUser && (
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm hidden sm:block"
+                >
+                  Logout
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Mobile Navigation Menu - Darker Background when open */}
-          {isMobileMenuOpen && (
-            <div className="lg:hidden mt-4 pb-4 border-t border-slate-700 pt-4 bg-slate-800/95 backdrop-blur-sm rounded-lg">
+          {/* Hidden Menu Panel - Appears when menu button is clicked */}
+          {isMenuOpen && (
+            <div className="mt-3 pb-3 border-t border-slate-700 pt-3 bg-slate-800/95 backdrop-blur-sm rounded-lg shadow-xl">
               {/* Mobile Current Scoring Display */}
               {isScoringControlActive && activeScoringHouse && (
-                <div className="mb-4 p-3 bg-linear-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg">
+                <div className="mb-3 p-3 bg-linear-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className={`w-10 h-10 ${activeScoringHouse.bgColor} rounded-lg flex items-center justify-center`}>
@@ -315,7 +246,7 @@ const Layout = ({ children }) => {
                       <div>
                         <p className="text-xs text-slate-400">Currently Scoring</p>
                         <div className="flex items-center space-x-2">
-                          <span className={`text-lg font-bold text-${activeScoringHouse.color}`}>
+                          <span className={`text-base font-bold text-${activeScoringHouse.color}`}>
                             {activeScoringHouse.name}
                           </span>
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -336,7 +267,7 @@ const Layout = ({ children }) => {
 
               {/* Mobile User Info */}
               {currentUser && (
-                <div className="mb-4 p-3 bg-slate-700/80 rounded-lg">
+                <div className="mb-3 p-3 bg-slate-700/80 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-slate-400">
@@ -345,7 +276,9 @@ const Layout = ({ children }) => {
                           : `Logged in as: ${currentUserHouse?.name || 'House'}`
                         }
                       </p>
-                      <p className="text-white font-medium">{currentUser.displayName}</p>
+                      <p className="text-white font-medium text-base">{currentUser.displayName}</p>
+                      <p className="text-sm text-slate-400">{currentUser.email}</p>
+                      
                       {isScoringControlActive && userRole === 'house' && (
                         <p className={`text-xs mt-1 flex items-center ${
                           currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
@@ -358,63 +291,78 @@ const Layout = ({ children }) => {
                               : 'bg-blue-500'
                           }`}></span>
                           {currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
-                            ? 'Quiz Conductor' 
-                            : 'Participant'
+                            ? '🎤 Quiz Conductor' 
+                            : '🔊 Participant'
                           }
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={handleLogout}
-                      className="px-3 py-1 bg-red-600 text-white border border-red-700 rounded-lg hover:bg-red-700 transition-colors text-sm"
-                    >
-                      Logout
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      {/* Mobile Logout Button */}
+                      <button
+                        onClick={handleLogout}
+                        className="px-3 py-1.5 bg-red-600 text-white border border-red-700 rounded-lg hover:bg-red-700 transition-colors text-sm sm:hidden"
+                      >
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Mobile Navigation Links */}
+              {/* Navigation Links Grid */}
               <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {navItems.map((item) => (
                   <Link
                     key={item.path}
                     to={item.path}
-                    onClick={closeMobileMenu}
+                    onClick={closeMenu}
                     className={`flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 text-center ${
                       location.pathname === item.path
                         ? 'bg-blue-600 text-white border border-blue-700'
                         : 'text-slate-400 hover:text-white hover:bg-slate-700/80'
                     }`}
                   >
-                    <span className="text-lg mb-1">{item.icon}</span>
+                    <span className="text-xl mb-1.5">{item.icon}</span>
                     <span className="text-xs font-medium">{item.label}</span>
                   </Link>
                 ))}
               </nav>
+
+              {/* Additional Info Footer in Menu */}
+              <div className="mt-3 pt-3 border-t border-slate-700">
+                <div className="flex justify-center items-center space-x-3">
+                  <div className="flex items-center space-x-1">
+                    <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-xs text-slate-400">
+                      {firebaseConnected ? 'Connected to server' : 'Server offline'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </header>
 
-      {/* Main Content Area - This will grow to push footer down */}
+      {/* Main Content Area */}
       <div className="flex-1 pt-16">
-        <main className="container mx-auto px-4 py-6 sm:py-8">
+        <main className="container mx-auto px-4 py-6">
           {children}
         </main>
       </div>
 
-      {/* Footer - Always at bottom */}
+      {/* Footer - Minimal */}
       <footer className="bg-slate-900 border-t border-slate-700 mt-auto">
-        <div className="container mx-auto px-4 py-4 sm:py-6 text-center">
-          <p className="text-slate-400 text-sm sm:text-base">
-            BRIDGEON House Cup System • Magical Learning Experience
+        <div className="container mx-auto px-4 py-3 text-center">
+          <p className="text-slate-400 text-sm">
+            BRIDGEON House Cup System
           </p>
           {/* Footer Current Scoring Status */}
           {isScoringControlActive && activeScoringHouse && (
-            <div className="mt-2 flex items-center justify-center space-x-2 text-xs text-slate-500">
+            <div className="mt-1 flex items-center justify-center space-x-2 text-xs text-slate-500">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Currently scoring: </span>
+              <span>Scoring: </span>
               <span className={`font-medium text-${activeScoringHouse.color}`}>
                 {activeScoringHouse.name}
               </span>
