@@ -292,12 +292,6 @@ const HouseTargetSelection = () => {
             >
               Back to Leaderboard
             </button>
-            <button
-              onClick={() => navigate('/buzer')}
-              className="px-6 py-3 md:px-8 md:py-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold transition-colors shadow-lg hover:shadow-xl"
-            >
-              🔊 Go to Buzzer
-            </button>
           </div>
         </div>
       </div>
