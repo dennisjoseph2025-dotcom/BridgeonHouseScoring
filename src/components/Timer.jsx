@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -17,7 +17,34 @@ const Timer = () => {
   const [customTime, setCustomTime] = useState(0);
   const [initialTime, setInitialTime] = useState(0);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [localTime, setLocalTime] = useState(0); // Local state for display
+  const [localTime, setLocalTime] = useState(0);
+  const [hasPlayedSound, setHasPlayedSound] = useState(false);
+  
+  // Audio ref for timer sound
+  const audioRef = useRef(null);
+  
+  // Initialize audio with local file
+  useEffect(() => {
+    // Create audio context
+    audioRef.current = new Audio('/audio/alarm.mp3');
+    audioRef.current.volume = 0.7; // Set volume to 70%
+    audioRef.current.preload = 'auto';
+    
+    // Add error handling for audio loading
+    audioRef.current.addEventListener('error', (e) => {
+      console.error('Error loading audio file:', e);
+      // Fallback to online sound if local file fails
+      audioRef.current.src = 'https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3';
+    });
+    
+    return () => {
+      // Cleanup audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   // Sync local time with Redux timer
   useEffect(() => {
@@ -30,7 +57,53 @@ const Timer = () => {
     setIsRedirecting(false);
     setInitialTime(0);
     setCustomTime(0);
+    setHasPlayedSound(false);
   }, [dispatch]);
+
+  // Play alarm sound when timer reaches 0
+  const playAlarmSound = () => {
+    if (audioRef.current && !hasPlayedSound) {
+      setHasPlayedSound(true);
+      
+      // Reset audio to start
+      audioRef.current.currentTime = 0;
+      
+      // Play the sound with error handling
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn('Audio playback failed:', error);
+          // Try playing again with reduced volume for browser restrictions
+          setTimeout(() => {
+            try {
+              audioRef.current.volume = 0.3;
+              audioRef.current.play();
+            } catch (e) {
+              console.warn('Second attempt failed:', e);
+            }
+          }, 100);
+        });
+      }
+      
+      // Stop sound after 3 seconds
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+      }, 3000);
+    }
+  };
+
+  // Stop alarm sound
+  const stopAlarmSound = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setHasPlayedSound(false);
+    }
+  };
 
   useEffect(() => {
     let interval;
@@ -40,17 +113,20 @@ const Timer = () => {
         dispatch(updateTimer());
       }, 1000);
     } else if (timer.isRunning && timer.time === 0) {
-      // Timer finished
+      // Timer finished - play sound
       dispatch(pauseTimer());
+      playAlarmSound();
       setIsRedirecting(true);
       
       // Navigate to quiz scoring when timer reaches zero
       setTimeout(() => {
+        stopAlarmSound();
         dispatch(resetTimer());
         setIsRedirecting(false);
         setInitialTime(0);
+        setHasPlayedSound(false);
         navigate('/quiz-scoring');
-      }, 1500);
+      }, 3000);
     }
     
     return () => {
@@ -58,13 +134,20 @@ const Timer = () => {
     };
   }, [timer.isRunning, timer.time, dispatch, navigate]);
 
+  // Format time helper
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  // Handle start/pause
   const handleStartPause = () => {
+    // Stop any playing alarm sound
+    if (hasPlayedSound) {
+      stopAlarmSound();
+    }
+    
     // If timer is at 0 and we have an initial time, reset it first
     if (timer.time === 0 && initialTime > 0) {
       dispatch(setTimer(initialTime));
@@ -84,36 +167,45 @@ const Timer = () => {
     }
   };
 
+  // Handle reset
   const handleReset = () => {
+    stopAlarmSound();
     dispatch(resetTimer());
     setInitialTime(0);
     setCustomTime(0);
     setIsRedirecting(false);
+    setHasPlayedSound(false);
   };
 
+  // Handle custom time
   const handleSetCustomTime = () => {
     if (customTime > 0) {
-      dispatch(setTimer(customTime));
-      setInitialTime(customTime);
+      stopAlarmSound();
+      dispatch(setTimer(customTime*60));
+      setInitialTime(customTime*60);
       setCustomTime(0);
       setIsRedirecting(false);
+      setHasPlayedSound(false);
     }
   };
 
+  // Quick time buttons
   const handleQuickTimeSet = (time) => {
     if (time > 0) {
+      stopAlarmSound();
       dispatch(setTimer(time));
       setInitialTime(time);
       setIsRedirecting(false);
+      setHasPlayedSound(false);
     }
   };
 
-  const quickTimeButtons = [30,60, 120, 180,300];
+  const quickTimeButtons = [30, 60, 120, 180, 300];
 
-  // Get status text based on current state
+  // Get status text
   const getStatusText = () => {
     if (isRedirecting) {
-      return "Time's Up! Redirecting...";
+      return " Time's Up! Redirecting...";
     }
     if (timer.isRunning) {
       return 'Countdown Running';
@@ -133,9 +225,14 @@ const Timer = () => {
   // Check if start button should be enabled
   const isStartButtonEnabled = () => {
     if (isRedirecting) return false;
-    if (timer.time > 0) return true; // Timer has time set
-    if (initialTime > 0) return true; // Initial time is set
-    return false; // No time set
+    if (timer.time > 0) return true;
+    if (initialTime > 0) return true;
+    return false;
+  };
+
+  // Test sound button
+  const testSound = () => {
+    playAlarmSound();
   };
 
   return (
@@ -160,9 +257,19 @@ const Timer = () => {
           }`}>
             {getStatusText()}
           </div>
+          
+          {/* Sound indicator when alarm is playing */}
+          {hasPlayedSound && (
+            <div className="mt-2 animate-pulse">
+              <span className="inline-flex items-center px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium">
+                🔔 Alarm Sound Playing
+              </span>
+            </div>
+          )}
+          
           {initialTime > 0 && !isRedirecting && (
             <div className="text-slate-500 text-xs mt-1">
-              Set for: {formatTime(initialTime)}
+              Initial time: {formatTime(initialTime)}
             </div>
           )}
         </div>
@@ -170,6 +277,10 @@ const Timer = () => {
         {/* Progress Bar */}
         {initialTime > 0 && timer.time > 0 && !isRedirecting && (
           <div className="mb-4 md:mb-6">
+            <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Time Remaining</span>
+              <span>{Math.round(((initialTime - timer.time) / initialTime) * 100)}%</span>
+            </div>
             <div className="w-full bg-slate-700 rounded-full h-2">
               <div 
                 className="bg-green-500 h-2 rounded-full transition-all duration-1000"
@@ -184,7 +295,7 @@ const Timer = () => {
           <button
             onClick={handleStartPause}
             disabled={!isStartButtonEnabled()}
-            className={`py-3 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 ${
+            className={`py-3 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 flex items-center justify-center ${
               !isStartButtonEnabled()
                 ? 'bg-gray-500 cursor-not-allowed text-gray-300' :
                 timer.isRunning
@@ -192,18 +303,26 @@ const Timer = () => {
                 : 'bg-green-500 hover:bg-green-600 text-white'
             } shadow-lg hover:shadow-xl`}
           >
-            {timer.isRunning ? '⏸️ Pause' : '▶️ Start'}
+            {timer.isRunning ? (
+              <>
+                <span className="mr-2">⏸️</span> Pause
+              </>
+            ) : (
+              <>
+                <span className="mr-2">▶️</span> Start
+              </>
+            )}
           </button>
           <button
             onClick={handleReset}
             disabled={isRedirecting}
-            className={`py-3 rounded-xl font-semibold text-sm md:text-base shadow-lg transition-all duration-200 ${
+            className={`py-3 rounded-xl font-semibold text-sm md:text-base shadow-lg transition-all duration-200 flex items-center justify-center ${
               isRedirecting
                 ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                 : 'bg-red-500 hover:bg-red-600 text-white'
             }`}
           >
-            🔄 Reset
+            <span className="mr-2">🔄</span> Reset
           </button>
         </div>
 
@@ -220,11 +339,11 @@ const Timer = () => {
                   isRedirecting
                     ? 'bg-gray-500 cursor-not-allowed text-gray-300' :
                     initialTime === time 
-                    ? 'bg-blue-500 text-white' 
+                    ? 'bg-blue-500 text-white shadow-md' 
                     : 'bg-slate-700 hover:bg-slate-600 text-white'
                 }`}
               >
-                {formatTime(time)}
+                {time <= 59 ? `${time}s` : `${Math.floor(time/60)}m`}
               </button>
             ))}
           </div>
@@ -236,7 +355,8 @@ const Timer = () => {
           <div className="flex space-x-2">
             <input
               type="number"
-              min="1"
+              // min="1"
+              max="3600"
               value={customTime}
               onChange={(e) => setCustomTime(parseInt(e.target.value))}
               placeholder="Seconds"
@@ -249,11 +369,11 @@ const Timer = () => {
             />
             <button
               onClick={handleSetCustomTime}
-              disabled={isRedirecting || customTime <= 0}
-              className={`px-3 py-2 rounded-lg font-semibold transition-colors text-sm ${
-                isRedirecting || customTime <= 0
+              disabled={isRedirecting || customTime <= 0 || customTime > 60}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center ${
+                isRedirecting || customTime <= 0 || customTime > 60
                   ? 'bg-gray-500 cursor-not-allowed text-gray-300' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white'
               }`}
             >
               Set
@@ -261,15 +381,25 @@ const Timer = () => {
           </div>
         </div>
 
+        {/* Test Sound Button */}
+        <div className="mb-3 md:mb-4">
+          <button
+            onClick={testSound}
+            disabled={isRedirecting}
+            className="w-full py-2 px-4 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-colors text-sm disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            <span className="mr-2">🔊</span>Alarm Sound
+          </button>
+        </div>
+
         {/* Navigation */}
         <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-3 mt-4 md:mt-6">
           <button
             onClick={() => navigate('/quiz-scoring')}
-            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors text-sm"
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors text-sm flex items-center justify-center"
           >
-            🎯 Back to Scoring
+            <span className="mr-2">🎯</span> Back to Scoring
           </button>
-          
         </div>
       </div>
     </div>

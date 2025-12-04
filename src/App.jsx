@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {
   selectCurrentUser,
   selectUserRole,
@@ -9,8 +9,10 @@ import {
   logoutUser,
   setFirebaseConnected,
   startHouseListener,
-  startQuizHistoryListener
+  startQuizHistoryListener,
+  startScoringControlListener, // This should work now
 } from './store/slices/quizSlice';
+
 import { firebaseService } from './services/firebaseService';
 import './index.css';
 import Layout from './components/Layout';
@@ -21,6 +23,9 @@ import QuizHistory from './components/QuizHistory';
 import AdminScoring from './components/AdminScoring';
 import Timer from './components/Timer';
 import Leaderboard from './components/Leaderboard';
+import Buzer from './components/Buzer';
+import ProtectedScoringRoute from './components/ProtectedScoringRoute';
+import ScoringControl from './components/ScoringControl';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -85,18 +90,18 @@ function AppContent() {
           <Navigate to="/login" replace />
       } />
       <Route path="/select-targets" element={
-        <ProtectedRoute allowedRoles={['house']}>
+        <ProtectedScoringRoute>
           <Layout>
             <HouseTargetSelection />
           </Layout>
-        </ProtectedRoute>
+        </ProtectedScoringRoute>
       } />
       <Route path="/quiz-scoring" element={
-        <ProtectedRoute allowedRoles={['house']}>
+        <ProtectedScoringRoute>
           <Layout>
             <QuizScoring />
           </Layout>
-        </ProtectedRoute>
+        </ProtectedScoringRoute>
       } />
       <Route path="/quiz-history" element={
         <ProtectedRoute allowedRoles={['admin', 'house']}>
@@ -126,6 +131,14 @@ function AppContent() {
           </Layout>
         </ProtectedRoute>
       } />
+      <Route path="/buzer" element={<Buzer />} />
+      <Route path="/scoring-control" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Layout>
+            <ScoringControl />
+          </Layout>
+        </ProtectedRoute>
+      } />
       {/* Catch all route - 404 handler */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -138,7 +151,7 @@ function App() {
   useEffect(() => {
     // Firebase auth state listener
     const auth = getAuth();
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // User is signed in
         let userRole = 'house';
@@ -163,6 +176,7 @@ function App() {
         // Start Firebase listeners only when authenticated
         dispatch(startHouseListener());
         dispatch(startQuizHistoryListener());
+        dispatch(startScoringControlListener()); // This should work now
         dispatch(setFirebaseConnected(true));
 
         console.log('✅ User authenticated:', user.email);

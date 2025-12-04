@@ -49,7 +49,7 @@ class FirebaseService {
     }
   }
 
-  // Initialize anonymous authentication for write operations - UPDATED
+  // Initialize anonymous authentication for write operations
   async initializeAuth() {
     try {
       await signInAnonymously(auth);
@@ -64,12 +64,11 @@ class FirebaseService {
     }
   }
 
-  // Wait for authentication to be ready - UPDATED
+  // Wait for authentication to be ready
   async ensureAuthenticated() {
     if (!this.isAuthenticated && this.authError) {
-      // If authentication failed, we'll try to proceed anyway
       console.warn('⚠️ Authentication failed, proceeding with operations (may fail due to security rules)');
-      return; // Don't throw error, let the operation attempt
+      return;
     }
     
     if (!this.isAuthenticated) {
@@ -80,7 +79,7 @@ class FirebaseService {
     }
   }
 
-  // Connection testing methods - UPDATED
+  // Connection testing methods
   async testConnection() {
     try {
       await this.ensureAuthenticated();
@@ -196,7 +195,7 @@ class FirebaseService {
     this.listeners.clear();
   }
 
-  // Data operations - UPDATED
+  // Data operations
   async writeData(path, data) {
     try {
       await this.ensureAuthenticated();
@@ -318,6 +317,252 @@ class FirebaseService {
     return this.listenToPath('quizHistory', callback, {
       debug: true
     });
+  }
+
+  // ADD THESE NEW METHODS FOR SCORING CONTROL
+
+  // Listen to scoring control
+  listenToScoringControl(callback) {
+    console.log('🎯 Setting up scoring control listener...');
+    
+    return this.listenToPath('scoringControl', (data, metadata) => {
+      console.log('📡 Scoring control data received:', data);
+      callback(data, null);
+    }, {
+      errorCallback: (error) => {
+        console.error('❌ Scoring control listener error:', error);
+        callback(null, error);
+      },
+      debug: true
+    });
+  }
+
+  // Listen to active scoring session
+  listenToScoringSession(callback) {
+    console.log('🎯 Setting up scoring session listener...');
+    
+    return this.listenToPath('activeScoringSession', (data, metadata) => {
+      console.log('📡 Scoring session data received:', data);
+      callback(data, null);
+    }, {
+      errorCallback: (error) => {
+        console.error('❌ Scoring session listener error:', error);
+        callback(null, error);
+      },
+      debug: true
+    });
+  }
+
+  // Save active scoring session to Firebase
+  async saveScoringSession(sessionData) {
+    try {
+      await this.ensureAuthenticated();
+      const sessionRef = ref(database, 'activeScoringSession');
+      
+      const dataWithMeta = {
+        ...sessionData,
+        _lastUpdated: Date.now(),
+        _status: 'active'
+      };
+      
+      await set(sessionRef, dataWithMeta);
+      
+      console.log('✅ Scoring session saved to Firebase:', dataWithMeta);
+      return {
+        success: true,
+        data: dataWithMeta,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error('❌ Error saving scoring session:', error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // Clear active scoring session from Firebase
+  async clearScoringSession() {
+    try {
+      await this.ensureAuthenticated();
+      const sessionRef = ref(database, 'activeScoringSession');
+      
+      await set(sessionRef, null);
+      
+      console.log('✅ Scoring session cleared from Firebase');
+      return {
+        success: true,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error('❌ Error clearing scoring session:', error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // Get current scoring session
+  async getCurrentScoringSession() {
+    try {
+      const sessionRef = ref(database, 'activeScoringSession');
+      const snapshot = await get(sessionRef);
+      
+      const data = snapshot.val();
+      
+      if (!data) {
+        return {
+          success: true,
+          exists: false,
+          data: null,
+          timestamp: Date.now()
+        };
+      }
+      
+      // Check if session has expired (2 hours max)
+      const sessionDuration = Date.now() - (data.startTime || data._lastUpdated);
+      const maxSessionDuration = 2 * 60 * 60 * 1000; // 2 hours
+      
+      if (sessionDuration > maxSessionDuration) {
+        // Session expired, clear it
+        await this.clearScoringSession();
+        return {
+          success: true,
+          exists: false,
+          data: null,
+          timestamp: Date.now(),
+          expired: true
+        };
+      }
+      
+      return {
+        success: true,
+        exists: true,
+        data: data,
+        timestamp: Date.now(),
+        duration: sessionDuration
+      };
+    } catch (error) {
+      console.error('❌ Error getting scoring session:', error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // Save scoring history (for records)
+  async saveToScoringHistory(sessionData) {
+    try {
+      await this.ensureAuthenticated();
+      const historyRef = ref(database, 'scoringHistory');
+      
+      // Get existing history
+      const existingHistory = await this.readData('scoringHistory');
+      const historyArray = existingHistory.data ? Object.values(existingHistory.data) : [];
+      
+      // Add new session to history
+      const newSession = {
+        ...sessionData,
+        id: `session_${Date.now()}`,
+        endTime: Date.now(),
+        duration: Date.now() - sessionData.startTime,
+        _archived: true
+      };
+      
+      historyArray.push(newSession);
+      
+      // Save updated history (keep last 100 sessions)
+      const limitedHistory = historyArray.slice(-100);
+      const historyData = {};
+      limitedHistory.forEach((session, index) => {
+        historyData[`session_${index}`] = session;
+      });
+      
+      await set(historyRef, historyData);
+      
+      console.log('✅ Scoring session added to history:', newSession);
+      return {
+        success: true,
+        session: newSession,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error('❌ Error saving to scoring history:', error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  // Check if a house can score
+  async canHouseScore(houseId) {
+    try {
+      // Check scoring control
+      const scoringControlResult = await this.readData('scoringControl');
+      
+      if (!scoringControlResult.success) {
+        return {
+          success: false,
+          error: scoringControlResult.error
+        };
+      }
+      
+      const scoringControl = scoringControlResult.data;
+      
+      // If no active session, all houses can score
+      if (!scoringControl || scoringControl.status !== 'active') {
+        return {
+          success: true,
+          canScore: true,
+          reason: 'No active scoring session'
+        };
+      }
+      
+      // Check if this house is the active scoring house
+      const canScore = scoringControl.activeHouseId === houseId;
+      
+      return {
+        success: true,
+        canScore: canScore,
+        activeHouseId: scoringControl.activeHouseId,
+        reason: canScore ? 'Active scoring house' : `Only ${scoringControl.activeHouseId} can score`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // Get current scoring control
+  async getScoringControl() {
+    try {
+      const result = await this.readData('scoringControl');
+      
+      if (result.success) {
+        return {
+          success: true,
+          data: result.data,
+          exists: result.exists
+        };
+      }
+      
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 
   // Utility methods
