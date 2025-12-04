@@ -33,7 +33,8 @@ const Buzer = () => {
   const lastProcessedTimestamp = useRef(0);
   const debounceRef = useRef(null);
   const processedBuzzIds = useRef(new Set());
-  const hasFirstBuzzPlayed = useRef(false); // Track if we've played sound for first buzz
+  const hasSoundPlayedThisRound = useRef(false); // Track if we've played sound for this round
+  const soundCooldownRef = useRef(false); // Prevent multiple sounds from playing too quickly
 
   // Get active scoring house
   useEffect(() => {
@@ -66,7 +67,7 @@ const Buzer = () => {
     }
   }, [scoringControl, houses, currentUserHouse, navigate]);
 
-  // Load buzzer sound - Modified to be shorter
+  // Load buzzer sound
   useEffect(() => {
     audioRef.current = new Audio('/audio/alarm.mp3');
     audioRef.current.volume = 0.7;
@@ -101,7 +102,8 @@ const Buzer = () => {
             setStartTime(data.startTime || Date.now());
             setBuzerQueue([]);
             processedBuzzIds.current.clear();
-            hasFirstBuzzPlayed.current = false; // Reset for new round
+            hasSoundPlayedThisRound.current = false; // Reset for new round
+            soundCooldownRef.current = false; // Reset cooldown
             toast.info('Buzzer round started! Get ready to buzz!', {
               icon: '🔊',
               duration: 2000
@@ -116,7 +118,8 @@ const Buzer = () => {
             setBuzerQueue([]);
             setStartTime(null);
             processedBuzzIds.current.clear();
-            hasFirstBuzzPlayed.current = false; // Reset for new round
+            hasSoundPlayedThisRound.current = false; // Reset for new round
+            soundCooldownRef.current = false; // Reset cooldown
             toast.info('Buzzer reset for next question', {
               icon: '🔄',
               duration: 1500
@@ -128,7 +131,8 @@ const Buzer = () => {
         setBuzerQueue([]);
         setStartTime(null);
         processedBuzzIds.current.clear();
-        hasFirstBuzzPlayed.current = false; // Reset
+        hasSoundPlayedThisRound.current = false; // Reset
+        soundCooldownRef.current = false; // Reset cooldown
       }
     }, {
       debug: true,
@@ -203,38 +207,39 @@ const Buzer = () => {
               !prevQueue.some(item => item.buzzId === newBuzz.buzzId)
             );
             
-            // MODIFIED: Play sound ONLY for quiz conductor and ONLY for the FIRST buzz
+            // NEW LOGIC: Play sound for quiz conductor when ANY new buzz arrives
             if (isQuizConductor && buzzerSoundEnabled && genuinelyNewBuzzes.length > 0) {
-              // Check if this is the first buzz of the round
-              if (!hasFirstBuzzPlayed.current && formattedBuzzes.length === 1) {
-                const firstBuzz = genuinelyNewBuzzes[0];
-                const house = houses.find(h => h.id === firstBuzz.houseId) || firstBuzz;
+              // Check if we're not in a cooldown period
+              if (!soundCooldownRef.current) {
+                // Play the buzzer sound
+                playBuzerSound(2000);
+                hasSoundPlayedThisRound.current = true;
                 
-                // Play the shortened buzzer sound (2 seconds)
-                playBuzerSound(2000); // Pass 2000ms for 2 seconds
-                hasFirstBuzzPlayed.current = true; // Mark that we've played for this round
+                // Set cooldown to prevent multiple rapid sounds
+                soundCooldownRef.current = true;
+                setTimeout(() => {
+                  soundCooldownRef.current = false;
+                }, 500); // 500ms cooldown between sounds
                 
-                toast(`${house.houseName || house.name} buzzed in first!`, {
-                  icon: '🥇',
-                  duration: 2000
-                });
-              } else {
-                // For subsequent buzzes, just show toast without sound
-                genuinelyNewBuzzes.forEach((newBuzz, index) => {
-                  // Only show toast for buzzes after the first one
-                  if (index > 0 || formattedBuzzes.length > 1) {
-                    const house = houses.find(h => h.id === newBuzz.houseId) || newBuzz;
-                    const position = formattedBuzzes.findIndex(b => b.houseId === newBuzz.houseId) + 1;
-                    toast(`${house.houseName || house.name} buzzed in ${getPositionText(position)}`, {
-                      icon: '🔔',
-                      duration: 1000
-                    });
-                  }
-                });
+                // Show toast for the first buzz or simultaneous buzzes
+                if (genuinelyNewBuzzes.length === 1) {
+                  const firstBuzz = genuinelyNewBuzzes[0];
+                  const house = houses.find(h => h.id === firstBuzz.houseId) || firstBuzz;
+                  toast(`${house.houseName || house.name} buzzed in first!`, {
+                    icon: '🥇',
+                    duration: 2000
+                  });
+                } else {
+                  // Multiple houses buzzed at once
+                  toast(`${genuinelyNewBuzzes.length} houses buzzed simultaneously!`, {
+                    icon: '🤯',
+                    duration: 2000
+                  });
+                }
               }
             }
             
-            // Notify participant if their buzz was registered
+            // Notify participants if their buzz was registered
             if (currentUserHouse && !isQuizConductor) {
               const myNewBuzz = genuinelyNewBuzzes.find(buzz => buzz.houseId === currentUserHouse.id);
               if (myNewBuzz) {
@@ -251,7 +256,8 @@ const Buzer = () => {
         } else {
           setBuzerQueue([]);
           processedBuzzIds.current.clear();
-          hasFirstBuzzPlayed.current = false; // Reset
+          hasSoundPlayedThisRound.current = false; // Reset
+          soundCooldownRef.current = false; // Reset cooldown
         }
       });
     }, {
@@ -290,14 +296,14 @@ const Buzer = () => {
     return `${position}${suffix}`;
   };
 
-  // MODIFIED: Play buzzer sound with optional duration
+  // Play buzzer sound with optional duration
   const playBuzerSound = (duration = 2000) => {
     if (audioRef.current && buzzerSoundEnabled) {
       audioRef.current.currentTime = 0;
       
       audioRef.current.play().catch(e => console.log("Audio play failed:", e));
       
-      // Auto-stop after specified duration (default 2 seconds)
+      // Auto-stop after specified duration
       setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused) {
           audioRef.current.pause();
@@ -325,7 +331,8 @@ const Buzer = () => {
       // Reset all tracking
       lastProcessedTimestamp.current = 0;
       processedBuzzIds.current.clear();
-      hasFirstBuzzPlayed.current = false; // Reset for new round
+      hasSoundPlayedThisRound.current = false; // Reset for new round
+      soundCooldownRef.current = false; // Reset cooldown
       
       // First, clear all existing buzzes
       console.log('Clearing existing buzzes...');
@@ -364,58 +371,7 @@ const Buzer = () => {
     }
   };
 
-  // Reset buzzer (quiz conductor only)
-  // const resetBuzer = async () => {
-  //   if (!isQuizConductor) {
-  //     toast.error('Only the scoring house can reset the buzzer');
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log('🔄 Resetting buzzer...');
-      
-  //     const resetEvent = {
-  //       type: 'BUZZER_RESET',
-  //       resetBy: currentUser?.email || 'unknown',
-  //       resetTime: Date.now(),
-  //       _lastUpdated: Date.now()
-  //     };
-
-  //     // Clear all buzzes
-  //     console.log('Clearing buzzes...');
-  //     const clearResult = await firebaseService.writeData('buzzerEvents/buzzes', {});
-  //     console.log('Clear result:', clearResult);
-      
-  //     // Reset all tracking
-  //     lastProcessedTimestamp.current = 0;
-  //     processedBuzzIds.current.clear();
-  //     hasFirstBuzzPlayed.current = false; // Reset for new round
-      
-  //     // Then update currentRound
-  //     console.log('Updating currentRound...', resetEvent);
-  //     const result = await firebaseService.writeData('buzzerEvents/currentRound', resetEvent);
-  //     console.log('Reset result:', result);
-      
-  //     if (result && result.success) {
-  //       // Update local state
-  //       setBuzerQueue([]);
-  //       setGameActive(false);
-  //       setStartTime(null);
-        
-  //       toast.success('Buzzer reset! Ready for next question.', {
-  //         icon: '🔄',
-  //         duration: 1500
-  //       });
-  //     } else {
-  //       toast.error('Failed to reset buzzer. Check console for details.');
-  //     }
-  //   } catch (error) {
-  //     console.error('❌ Error resetting buzzer:', error);
-  //     toast.error(`Error resetting buzzer: ${error.message || 'Unknown error'}`);
-  //   }
-  // };
-
-  // Clear all buzzer events (admin/quiz conductor only)
+  // Clear all buzzer events (quiz conductor only)
   const clearBuzerEvents = async () => {
     if (!isQuizConductor) {
       toast.error('Only the scoring house can clear buzzer events');
@@ -454,7 +410,8 @@ const Buzer = () => {
       // Reset all tracking
       lastProcessedTimestamp.current = 0;
       processedBuzzIds.current.clear();
-      hasFirstBuzzPlayed.current = false; // Reset
+      hasSoundPlayedThisRound.current = false; // Reset
+      soundCooldownRef.current = false; // Reset cooldown
       
       // Update local state
       setBuzerQueue([]);
@@ -553,14 +510,14 @@ const Buzer = () => {
     return (ms / 1000).toFixed(2);
   };
 
-  // MODIFIED: Test button also uses 2-second duration
-  const testBuzzerSound = () => {
-    playBuzerSound(2000);
-    toast.success('Playing 2-second buzzer sound test', {
-      icon: '🔊',
-      duration: 1500
-    });
-  };
+  // // Test button for buzzer sound
+  // const testBuzzerSound = () => {
+  //   playBuzerSound(2000);
+  //   toast.success('Playing 2-second buzzer sound test', {
+  //     icon: '🔊',
+  //     duration: 1500
+  //   });
+  // };
 
   // Show loading state
   if (isLoading) {
@@ -650,19 +607,8 @@ const Buzer = () => {
                       : 'bg-green-500 hover:bg-green-600 text-white hover:shadow-xl'
                   }`}
                 >
-                 Start Buzzer Round
+                   Start Buzzer Round
                 </button>
-                {/* <button
-                  onClick={resetBuzer}
-                  disabled={!gameActive || !activeScoringHouse}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${
-                    !gameActive || !activeScoringHouse
-                      ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                      : 'bg-red-500 hover:bg-red-600 text-white hover:shadow-xl'
-                  }`}
-                >
-                  🔄 Reset Buzzer
-                </button> */}
                 <button
                   onClick={clearBuzerEvents}
                   disabled={!activeScoringHouse}
@@ -672,7 +618,7 @@ const Buzer = () => {
                       : 'bg-purple-500 hover:bg-purple-600 text-white hover:shadow-xl'
                   }`}
                 >
-                  Reset Buzzer
+                   Reset
                 </button>
               </>
             ) : (
@@ -698,15 +644,13 @@ const Buzer = () => {
             
             {/* Conditional navigation button */}
             {isQuizConductor ? (
-              // Quiz conductor sees "Back to Scoring" button
               <button
                 onClick={() => navigate('/quiz-scoring')}
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
               >
-                ← Back to Scoring
+                Back to Scoring
               </button>
             ) : (
-              // Participating houses see "Quiz History" button
               <button
                 onClick={() => navigate('/quiz-history')}
                 className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
@@ -778,15 +722,23 @@ const Buzer = () => {
                   {buzerQueue.length} house{buzerQueue.length !== 1 ? 's' : ''} buzzed
                 </span>
                 {isQuizConductor && (
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={buzzerSoundEnabled}
-                      onChange={(e) => setBuzzerSoundEnabled(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-slate-400 text-sm">Buzzer Sound</span>
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={buzzerSoundEnabled}
+                        onChange={(e) => setBuzzerSoundEnabled(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-slate-400 text-sm">Sound</span>
+                    </label>
+                    {/* <button
+                      onClick={testBuzzerSound}
+                      className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm transition-colors"
+                    >
+                      Test
+                    </button> */}
+                  </div>
                 )}
               </div>
             </div>
@@ -877,8 +829,8 @@ const Buzer = () => {
                   <div className="p-4 bg-linear-to-r from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/30">
                     <h3 className="text-lg font-semibold text-white mb-2">🎤 Quiz Conductor</h3>
                     <p className="text-slate-300 text-sm">
-                      You control the buzzer. When you start a round, other houses can buzz in.
-                      The buzzer sound will play on YOUR device when they buzz.
+                      You control the buzzer. The buzzer sound will play on YOUR device when houses buzz.
+                      A sound will play for the first buzz or when multiple houses buzz simultaneously.
                     </p>
                   </div>
                   
@@ -903,31 +855,6 @@ const Buzer = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <button
-                    onClick={startNewRound}
-                    disabled={gameActive || !activeScoringHouse}
-                    className={`w-full py-4 rounded-xl font-semibold transition-colors text-lg shadow-lg ${
-                      gameActive || !activeScoringHouse
-                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        : 'bg-green-500 hover:bg-green-600 text-white hover:shadow-xl'
-                    }`}
-                  >
-                    🔊 Start Buzzer Round
-                  </button>
-                  {/* <button
-                    onClick={resetBuzer}
-                    disabled={!gameActive || !activeScoringHouse}
-                    className={`w-full py-4 rounded-xl font-semibold transition-colors text-lg shadow-lg ${
-                      !gameActive || !activeScoringHouse
-                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        : 'bg-red-500 hover:bg-red-600 text-white hover:shadow-xl'
-                    }`}
-                  >
-                    🔄 Reset for Next Question
-                  </button> */}
                 </div>
               </>
             ) : (
@@ -1024,7 +951,7 @@ const Buzer = () => {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-blue-400">②</span>
-                      <span>Watch which house buzzes first (they get to answer)</span>
+                      <span>Buzzer sound will play on YOUR device for the first buzz or simultaneous buzzes</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-red-400">③</span>
@@ -1032,7 +959,7 @@ const Buzer = () => {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-purple-400">④</span>
-                      <span>Buzzer sounds play on YOUR device only</span>
+                      <span>Watch the queue to see which house buzzed first</span>
                     </li>
                   </>
                 ) : (
@@ -1060,41 +987,6 @@ const Buzer = () => {
           </div>
         </div>
       </div>
-
-       {/* Audio Test Panel */}
-      {/* {isQuizConductor && (
-        <div className="mt-8 glass rounded-2xl p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-1">Audio Test</h3>
-              <p className="text-slate-400 text-sm">
-                {isQuizConductor 
-                  ? 'Test what the buzzer sounds like (only you can hear it)' 
-                  : 'The buzzer sound plays on the quiz conductor\'s device when you buzz'}
-              </p>
-            </div>
-            <div className="flex gap-3">
-  
-              <button
-                onClick={testBuzzerSound}
-                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                🔊 Test Buzzer Sound
-              </button>
-              <button
-                onClick={() => setBuzzerSoundEnabled(!buzzerSoundEnabled)}
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  buzzerSoundEnabled 
-                    ? 'bg-red-500 hover:bg-red-600 text-white' 
-                    : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
-              >
-                {buzzerSoundEnabled ? '🔇 Mute Sounds' : '🔊 Enable Sounds'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
     </div>
   );
 };
