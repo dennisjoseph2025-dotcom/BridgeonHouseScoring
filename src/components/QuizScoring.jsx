@@ -415,6 +415,12 @@ const QuizScoring = () => {
               >
                 🔊 Buzzer System
               </button>
+              <button
+                onClick={() => navigate('/timer')}
+                className="w-full py-2 md:py-3 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/30 transition-colors font-medium text-sm md:text-base flex items-center justify-center gap-2"
+              >
+                ⏱️ Timer
+              </button>
             </div>
           </div>
         </div>
