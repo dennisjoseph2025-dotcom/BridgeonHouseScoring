@@ -1,12 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { firebaseService } from '../../services/firebaseService';
 
-// // Import house images
-// import gryffindorIcon from '../../assets/gryffindor.png';
-// import slytherinIcon from '../../assets/slytherin.png';
-// import hufflepuffIcon from '../../assets/hufflepuff.png';
-// import ravenclawIcon from '../../assets/ravenclaw.png';
-// import mediaIcon from '../../assets/media.png';
+// Import house images
+import gryffindorIcon from '../../assets/gryffindor.png';
+import slytherinIcon from '../../assets/slytherin.png';
+import hufflepuffIcon from '../../assets/hufflepuff.png';
+import ravenclawIcon from '../../assets/ravenclaw.png';
+import mediaIcon from '../../assets/media.png';
 
 const houses = [
   { 
@@ -14,7 +14,7 @@ const houses = [
     name: 'Gryffindor', 
     color: 'gryffindor', 
     bgColor: 'bg-gryffindor', 
-    icon: "https://img.icons8.com/?size=100&id=undefined&format=png&color=000000&v=1", // Added &v=1
+    icon: gryffindorIcon,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -24,7 +24,7 @@ const houses = [
     name: 'Slytherin', 
     color: 'slytherin', 
     bgColor: 'bg-slytherin', 
-    icon: "https://img.icons8.com/?size=100&id=XRczgGb9n2Wk&format=png&color=000000&v=1", // Added &v=1
+    icon: slytherinIcon,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -34,7 +34,7 @@ const houses = [
     name: 'Hufflepuff', 
     color: 'hufflepuff', 
     bgColor: 'bg-hufflepuff', 
-    icon: "https://img.icons8.com/?size=100&id=0ny63oDHuHzk&format=png&color=000000&v=1", // Added &v=1
+    icon: hufflepuffIcon,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -44,7 +44,7 @@ const houses = [
     name: 'Ravenclaw', 
     color: 'ravenclaw', 
     bgColor: 'bg-ravenclaw', 
-    icon: "https://img.icons8.com/?size=100&id=1hOdjXVeg4oY&format=png&color=000000&v=1", // Added &v=1
+    icon: ravenclawIcon,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -54,7 +54,7 @@ const houses = [
     name: 'Media Team', 
     color: 'media', 
     bgColor: 'bg-media', 
-    icon: "https://img.icons8.com/?size=100&id=24373&format=png&color=000000&v=1", // Added &v=1
+    icon: mediaIcon,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
