@@ -7,9 +7,24 @@ import {
   applyAdminPoints,
   selectHouses,
   resetAllScoresFirebase,
-  saveAllHousesSingleWrite // ADD THIS IMPORT
+  saveAllHousesSingleWrite
 } from '../store/slices/quizSlice';
 import toast from 'react-hot-toast';
+
+// Import Lucide React icons
+import {
+  Crown,
+  Save,
+  RotateCcw,
+  PlusCircle,
+  MinusCircle,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle,
+  AlertCircle,
+  Home,
+  Award
+} from 'lucide-react';
 
 const AdminScoring = () => {
   const dispatch = useDispatch();
@@ -26,7 +41,7 @@ const AdminScoring = () => {
       }
 
       toast.success(`+${points} pending points to ${house.name}`, {
-        icon: '🔺',
+        icon: <TrendingUp className="w-4 h-4" />,
         duration: 1500
       });
     } catch (error) {
@@ -43,7 +58,7 @@ const AdminScoring = () => {
       dispatch(subtractAdminPoint(houseId));
 
       toast.error(`-1 pending point from ${house.name}`, {
-        icon: '🔻',
+        icon: <TrendingDown className="w-4 h-4" />,
         duration: 1500
       });
     } catch (error) {
@@ -54,8 +69,6 @@ const AdminScoring = () => {
 
   const handleSaveScores = async () => {
     try {
-
-
       // Show loading state immediately
       const saveToast = toast.loading('Saving scores...');
 
@@ -68,7 +81,7 @@ const AdminScoring = () => {
 
         if (result.success) {
           toast.success('Scores saved successfully!', {
-            icon: '💾',
+            icon: <CheckCircle className="w-4 h-4" />,
             duration: 2000
           });
         } else {
@@ -95,7 +108,9 @@ const AdminScoring = () => {
             onClick={async () => {
               try {
                 await dispatch(resetAllScoresFirebase());
-                toast.success('All scores reset!', { icon: '🔄' });
+                toast.success('All scores reset!', { 
+                  icon: <RotateCcw className="w-4 h-4" /> 
+                });
                 toast.dismiss(t.id);
               } catch (error) {
                 toast.error('Failed to reset scores');
@@ -136,7 +151,7 @@ const AdminScoring = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-linear-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl text-white">👑</span>
+              <Crown className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Admin Scoring Panel</h1>
@@ -150,19 +165,21 @@ const AdminScoring = () => {
             <button
               onClick={handleSaveScores}
               disabled={!hasPendingChanges}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
                 hasPendingChanges
                   ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
                   : 'bg-slate-600 text-slate-400 cursor-not-allowed'
               }`}
             >
-              💾 Save Scores
+              <Save className="w-5 h-5" />
+              <span>Save Scores</span>
             </button>
             <button
               onClick={handleResetScores}
-              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-all duration-200"
+              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2"
             >
-              🔄 Reset All
+              <RotateCcw className="w-5 h-5" />
+              <span>Reset All</span>
             </button>
           </div>
         </div>
@@ -225,9 +242,10 @@ const AdminScoring = () => {
                     <button
                       key={`add-${points}`}
                       onClick={() => handleAddPoints(house.id, points)}
-                      className="py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                      className="py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-1"
                     >
-                      +{points}
+                      <PlusCircle className="w-4 h-4" />
+                      <span>+{points}</span>
                     </button>
                   ))}
                 </div>
@@ -235,10 +253,10 @@ const AdminScoring = () => {
                 {/* Subtract Point Button */}
                 <button
                   onClick={() => handleSubtractPoint(house.id)}
-
-                  className={`w-full py-3 rounded-lg font-semibold transition-all duration-200  bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl`}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl flex items-center justify-center space-x-1`}
                 >
-                  -1 Point
+                  <MinusCircle className="w-4 h-4" />
+                  <span>1 Point</span>
                 </button>
               </div>
             </div>
@@ -247,9 +265,12 @@ const AdminScoring = () => {
       </div>
 
       {/* Save Instructions */}
-
+      {hasPendingChanges && (
         <div className="glass rounded-2xl p-6 mt-8 text-center border border-green-500/20">
           <div className="flex items-center justify-center space-x-3">
+            <div className="bg-green-500/20 p-2 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-green-400" />
+            </div>
             <div>
               <p className="text-green-400 font-semibold">
                 Don't forget to save your changes!
@@ -260,6 +281,7 @@ const AdminScoring = () => {
             </div>
           </div>
         </div>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
+import logo from '../assets/logo.jpg'
 import { 
   selectHouses, 
   selectCurrentUser, 
@@ -12,6 +13,33 @@ import {
   selectScoringControl,
 } from '../store/slices/quizSlice';
 import { getAuth, signOut } from 'firebase/auth';
+
+// Import Lucide React icons
+import {
+  Trophy,
+  BarChart3,
+  Target,
+  Star,
+  Clock,
+  Bell,
+  Crown,
+  LogOut,
+  Menu,
+  X,
+  Home,
+  User,
+  CheckCircle2,
+  XCircle,
+  Radio,
+  Headphones,
+  Zap,
+  Server,
+  Timer,
+  Settings,
+  History,
+  Gamepad2,
+  Mic2
+} from 'lucide-react';
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -57,28 +85,60 @@ const Layout = ({ children }) => {
   // Get the currently scoring house object
   const activeScoringHouse = houses.find(h => h.id === scoringControl.activeHouseId);
 
-  // Base navigation items for all users
+  // Base navigation items for all users - using Lucide icons with same alignment
   const baseNavItems = [
-    { path: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
-    { path: '/quiz-history', label: 'Quiz History', icon: '📊' }
+    { 
+      path: '/leaderboard', 
+      label: 'Leaderboard', 
+      icon: <Trophy className="w-5 h-5" />
+    },
+    { 
+      path: '/quiz-history', 
+      label: 'Quiz History', 
+      icon: <BarChart3 className="w-5 h-5" />
+    }
   ];
 
   // Navigation items for house users when they can score
   const scoringHouseNavItems = [
-    { path: '/select-targets', label: 'Select Targets', icon: '🎯' },
-    { path: '/quiz-scoring', label: 'Quiz Scoring', icon: '⭐' },
-    { path: '/timer', label: 'Timer', icon: '⏱️' },
+    { 
+      path: '/select-targets', 
+      label: 'Select Targets', 
+      icon: <Target className="w-5 h-5" />
+    },
+    { 
+      path: '/quiz-scoring', 
+      label: 'Quiz Scoring', 
+      icon: <Star className="w-5 h-5" />
+    },
+    { 
+      path: '/timer', 
+      label: 'Timer', 
+      icon: <Timer className="w-5 h-5" />
+    },
   ];
 
   // Navigation items for participating houses (not scoring)
   const participatingHouseNavItems = [
-    { path: '/buzer', label: 'Buzzer', icon: '🔊' },
+    { 
+      path: '/buzer', 
+      label: 'Buzzer', 
+      icon: <Bell className="w-5 h-5" />
+    },
   ];
 
   // Navigation items for admin only
   const adminNavItems = [
-    { path: '/admin-scoring', label: 'Admin Scoring', icon: '👑' },
-    { path: '/scoring-control', label: 'Scoring Control', icon: '🎮' },
+    { 
+      path: '/admin-scoring', 
+      label: 'Admin Scoring', 
+      icon: <Crown className="w-5 h-5" />
+    },
+    { 
+      path: '/scoring-control', 
+      label: 'Scoring Control', 
+      icon: <Settings className="w-5 h-5" />
+    },
   ];
 
   // Combine navigation items based on user role and scoring session
@@ -139,8 +199,12 @@ const Layout = ({ children }) => {
           <div className="flex items-center justify-between">
             {/* Left: Logo and BRIDGEON */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">B</span>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                <img 
+                  src={logo}
+                  alt="Bridgeon Logo"
+                  className="w-full h-full object-contain bg-white pr-0.5 p-1"
+                />
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-white">BRIDGEON</h1>
@@ -182,7 +246,11 @@ const Layout = ({ children }) => {
               {/* Firebase Connection Status */}
               {currentUser && (
                 <div className="hidden sm:flex items-center space-x-1 mr-2">
-                  <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  {firebaseConnected ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  )}
                   <span className="text-xs text-slate-400">
                     {firebaseConnected ? 'Connected' : 'Offline'}
                   </span>
@@ -206,13 +274,9 @@ const Layout = ({ children }) => {
                 aria-label="Open menu"
               >
                 {isMenuOpen ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-6 h-6" />
                 ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                  <Menu className="w-6 h-6" />
                 )}
               </button>
 
@@ -259,6 +323,7 @@ const Layout = ({ children }) => {
                       </div>
                     </div>
                     <div className="inline-flex items-center px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">
+                      <Zap className="w-3 h-3" />
                       LIVE
                     </div>
                   </div>
@@ -285,15 +350,17 @@ const Layout = ({ children }) => {
                             ? 'text-green-400' 
                             : 'text-blue-400'
                         }`}>
-                          <span className={`w-2 h-2 rounded-full mr-1 ${
-                            currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
-                              ? 'bg-green-500' 
-                              : 'bg-blue-500'
-                          }`}></span>
-                          {currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
-                            ? '🎤 Quiz Conductor' 
-                            : '🔊 Participant'
-                          }
+                          {currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId ? (
+                            <>
+                              <Mic2 className="w-3 h-3 mr-1" />
+                              Quiz Conductor
+                            </>
+                          ) : (
+                            <>
+                              <Headphones className="w-3 h-3 mr-1" />
+                              Participant
+                            </>
+                          )}
                         </p>
                       )}
                     </div>
@@ -323,7 +390,9 @@ const Layout = ({ children }) => {
                         : 'text-slate-400 hover:text-white hover:bg-slate-700/80'
                     }`}
                   >
-                    <span className="text-xl mb-1.5">{item.icon}</span>
+                    <div className="text-xl mb-1.5 flex items-center justify-center">
+                      {item.icon}
+                    </div>
                     <span className="text-xs font-medium">{item.label}</span>
                   </Link>
                 ))}
@@ -333,7 +402,11 @@ const Layout = ({ children }) => {
               <div className="mt-3 pt-3 border-t border-slate-700">
                 <div className="flex justify-center items-center space-x-3">
                   <div className="flex items-center space-x-1">
-                    <div className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    {firebaseConnected ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-500" />
+                    )}
                     <span className="text-xs text-slate-400">
                       {firebaseConnected ? 'Connected to server' : 'Server offline'}
                     </span>

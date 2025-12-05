@@ -12,6 +12,37 @@ import {
 import { firebaseService } from '../services/firebaseService';
 import toast from 'react-hot-toast';
 
+// Import Lucide React icons
+import {
+  Volume2,
+  Trophy,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Bell,
+  RotateCcw,
+  PlayCircle,
+  Mic2,
+  Headphones,
+  Award,
+  Clock,
+  VolumeX,
+  History,
+  ArrowLeft,
+  ChevronRight,
+  Zap,
+  Star,
+  User,
+  Home,
+  Target,
+  Settings,
+  Plus,
+  Minus,
+  AlertTriangle,
+  Info,
+  Volume1
+} from 'lucide-react';
+
 const Buzer = () => {
   const navigate = useNavigate();
   const houses = useSelector(selectHouses);
@@ -33,8 +64,8 @@ const Buzer = () => {
   const lastProcessedTimestamp = useRef(0);
   const debounceRef = useRef(null);
   const processedBuzzIds = useRef(new Set());
-  const hasSoundPlayedThisRound = useRef(false); // Track if we've played sound for this round
-  const soundCooldownRef = useRef(false); // Prevent multiple sounds from playing too quickly
+  const hasSoundPlayedThisRound = useRef(false);
+  const soundCooldownRef = useRef(false);
 
   // Get active scoring house
   useEffect(() => {
@@ -72,14 +103,13 @@ const Buzer = () => {
     audioRef.current = new Audio('/audio/alarm.mp3');
     audioRef.current.volume = 0.7;
     
-    // Add event listener to stop the sound after 2 seconds
     audioRef.current.addEventListener('playing', () => {
       setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused) {
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
         }
-      }, 2000); // Stop after 2 seconds
+      }, 2000);
     });
   }, []);
 
@@ -102,10 +132,10 @@ const Buzer = () => {
             setStartTime(data.startTime || Date.now());
             setBuzerQueue([]);
             processedBuzzIds.current.clear();
-            hasSoundPlayedThisRound.current = false; // Reset for new round
-            soundCooldownRef.current = false; // Reset cooldown
+            hasSoundPlayedThisRound.current = false;
+            soundCooldownRef.current = false;
             toast.info('Buzzer round started! Get ready to buzz!', {
-              icon: '🔊',
+              icon: <Volume2 className="w-4 h-4" />,
               duration: 2000
             });
             break;
@@ -118,10 +148,10 @@ const Buzer = () => {
             setBuzerQueue([]);
             setStartTime(null);
             processedBuzzIds.current.clear();
-            hasSoundPlayedThisRound.current = false; // Reset for new round
-            soundCooldownRef.current = false; // Reset cooldown
+            hasSoundPlayedThisRound.current = false;
+            soundCooldownRef.current = false;
             toast.info('Buzzer reset for next question', {
-              icon: '🔄',
+              icon: <RotateCcw className="w-4 h-4" />,
               duration: 1500
             });
             break;
@@ -131,8 +161,8 @@ const Buzer = () => {
         setBuzerQueue([]);
         setStartTime(null);
         processedBuzzIds.current.clear();
-        hasSoundPlayedThisRound.current = false; // Reset
-        soundCooldownRef.current = false; // Reset cooldown
+        hasSoundPlayedThisRound.current = false;
+        soundCooldownRef.current = false;
       }
     }, {
       debug: true,
@@ -207,45 +237,38 @@ const Buzer = () => {
               !prevQueue.some(item => item.buzzId === newBuzz.buzzId)
             );
             
-            // NEW LOGIC: Play sound for quiz conductor when ANY new buzz arrives
             if (isQuizConductor && buzzerSoundEnabled && genuinelyNewBuzzes.length > 0) {
-              // Check if we're not in a cooldown period
               if (!soundCooldownRef.current) {
-                // Play the buzzer sound
                 playBuzerSound(2000);
                 hasSoundPlayedThisRound.current = true;
                 
-                // Set cooldown to prevent multiple rapid sounds
                 soundCooldownRef.current = true;
                 setTimeout(() => {
                   soundCooldownRef.current = false;
-                }, 500); // 500ms cooldown between sounds
+                }, 500);
                 
-                // Show toast for the first buzz or simultaneous buzzes
                 if (genuinelyNewBuzzes.length === 1) {
                   const firstBuzz = genuinelyNewBuzzes[0];
                   const house = houses.find(h => h.id === firstBuzz.houseId) || firstBuzz;
                   toast(`${house.houseName || house.name} buzzed in first!`, {
-                    icon: '🥇',
+                    icon: <Trophy className="w-4 h-4" />,
                     duration: 2000
                   });
                 } else {
-                  // Multiple houses buzzed at once
                   toast(`${genuinelyNewBuzzes.length} houses buzzed simultaneously!`, {
-                    icon: '🤯',
+                    icon: <AlertCircle className="w-4 h-4" />,
                     duration: 2000
                   });
                 }
               }
             }
             
-            // Notify participants if their buzz was registered
             if (currentUserHouse && !isQuizConductor) {
               const myNewBuzz = genuinelyNewBuzzes.find(buzz => buzz.houseId === currentUserHouse.id);
               if (myNewBuzz) {
                 const position = formattedBuzzes.findIndex(b => b.houseId === currentUserHouse.id) + 1;
                 toast.success(`You buzzed in ${getPositionText(position)}!`, {
-                  icon: '✓',
+                  icon: <CheckCircle className="w-4 h-4" />,
                   duration: 2000
                 });
               }
@@ -256,8 +279,8 @@ const Buzer = () => {
         } else {
           setBuzerQueue([]);
           processedBuzzIds.current.clear();
-          hasSoundPlayedThisRound.current = false; // Reset
-          soundCooldownRef.current = false; // Reset cooldown
+          hasSoundPlayedThisRound.current = false;
+          soundCooldownRef.current = false;
         }
       });
     }, {
@@ -303,7 +326,6 @@ const Buzer = () => {
       
       audioRef.current.play().catch(e => console.log("Audio play failed:", e));
       
-      // Auto-stop after specified duration
       setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused) {
           audioRef.current.pause();
@@ -328,13 +350,11 @@ const Buzer = () => {
     try {
       console.log('🎬 Starting new buzzer round...');
       
-      // Reset all tracking
       lastProcessedTimestamp.current = 0;
       processedBuzzIds.current.clear();
-      hasSoundPlayedThisRound.current = false; // Reset for new round
-      soundCooldownRef.current = false; // Reset cooldown
+      hasSoundPlayedThisRound.current = false;
+      soundCooldownRef.current = false;
       
-      // First, clear all existing buzzes
       console.log('Clearing existing buzzes...');
       const clearResult = await firebaseService.writeData('buzzerEvents/buzzes', {});
       console.log('Clear result:', clearResult);
@@ -359,7 +379,7 @@ const Buzer = () => {
         setBuzerQueue([]);
         
         toast.success('Buzzer round started! All houses can now buzz in.', {
-          icon: '🔊',
+          icon: <Volume2 className="w-4 h-4" />,
           duration: 2000
         });
       } else {
@@ -407,20 +427,18 @@ const Buzer = () => {
         }
       }
       
-      // Reset all tracking
       lastProcessedTimestamp.current = 0;
       processedBuzzIds.current.clear();
-      hasSoundPlayedThisRound.current = false; // Reset
-      soundCooldownRef.current = false; // Reset cooldown
+      hasSoundPlayedThisRound.current = false;
+      soundCooldownRef.current = false;
       
-      // Update local state
       setBuzerQueue([]);
       setGameActive(false);
       setStartTime(null);
       
       toast.dismiss(loadingToast);
       toast.success('All buzzer events cleared', {
-        icon: '🧹',
+        icon: <RotateCcw className="w-4 h-4" />,
         duration: 1500
       });
       
@@ -454,7 +472,6 @@ const Buzer = () => {
       return;
     }
 
-    // Check if house already buzzed
     if (buzerQueue.some(item => item.houseId === currentUserHouse.id)) {
       toast.error(`You have already buzzed in!`);
       return;
@@ -480,7 +497,6 @@ const Buzer = () => {
         _lastUpdated: Date.now()
       };
 
-      // Use a simpler buzz ID
       const buzzId = `${buzzTime}_${currentUserHouse.id}`;
       console.log('Registering buzz:', buzzerClickEvent);
       const result = await firebaseService.updateData(`buzzerEvents/buzzes/${buzzId}`, buzzerClickEvent);
@@ -491,7 +507,7 @@ const Buzer = () => {
         if (buzerQueue.length + 1 === participatingHouses.length) {
           setTimeout(() => {
             toast('All participating houses have buzzed! Round completed.', {
-              icon: '✅',
+              icon: <CheckCircle className="w-4 h-4" />,
               duration: 4000
             });
           }, 500);
@@ -510,22 +526,13 @@ const Buzer = () => {
     return (ms / 1000).toFixed(2);
   };
 
-  // // Test button for buzzer sound
-  // const testBuzzerSound = () => {
-  //   playBuzerSound(2000);
-  //   toast.success('Playing 2-second buzzer sound test', {
-  //     icon: '🔊',
-  //     duration: 1500
-  //   });
-  // };
-
   // Show loading state
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto text-center fade-in px-4 py-12">
         <div className="glass rounded-2xl p-8 md:p-12">
           <div className="w-20 h-20 bg-slate-700 rounded-2xl mx-auto mb-6 flex items-center justify-center animate-pulse">
-            <span className="text-3xl">⏳</span>
+            <Clock className="w-10 h-10 text-slate-400" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Loading Buzzer...</h2>
           <p className="text-slate-400 mb-6 md:mb-8 text-sm md:text-base">
@@ -542,7 +549,7 @@ const Buzer = () => {
       <div className="max-w-2xl mx-auto text-center fade-in px-4 py-12">
         <div className="glass rounded-2xl p-8 md:p-12">
           <div className="w-20 h-20 bg-slate-700 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-            <span className="text-3xl">🏠</span>
+            <Home className="w-10 h-10 text-slate-400" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">House Not Detected</h2>
           <p className="text-slate-400 mb-6 md:mb-8 text-sm md:text-base">
@@ -550,9 +557,10 @@ const Buzer = () => {
           </p>
           <button
             onClick={() => navigate('/login')}
-            className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors shadow-lg hover:shadow-xl"
+            className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-2 mx-auto"
           >
-            🔐 Re-login
+            <Settings className="w-5 h-5" />
+            Re-login
           </button>
         </div>
       </div>
@@ -574,7 +582,7 @@ const Buzer = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                {isQuizConductor ? 'Quiz Conductor Console' : '🔊 Buzzer System'}
+                {isQuizConductor ? 'Quiz Conductor Console' : 'Buzzer System'}
               </h1>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-slate-400">
@@ -601,44 +609,59 @@ const Buzer = () => {
                 <button
                   onClick={startNewRound}
                   disabled={gameActive || !activeScoringHouse}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg flex items-center gap-2 ${
                     gameActive || !activeScoringHouse
                       ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
                       : 'bg-green-500 hover:bg-green-600 text-white hover:shadow-xl'
                   }`}
                 >
-                   Start Buzzer Round
+                  <PlayCircle className="w-5 h-5" />
+                  Start Buzzer Round
                 </button>
                 <button
                   onClick={clearBuzerEvents}
                   disabled={!activeScoringHouse}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg flex items-center gap-2 ${
                     !activeScoringHouse
                       ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
                       : 'bg-purple-500 hover:bg-purple-600 text-white hover:shadow-xl'
                   }`}
                 >
-                   Reset
+                  <RotateCcw className="w-5 h-5" />
+                  Reset
                 </button>
               </>
             ) : (
               <button
                 onClick={handleBuzerClick}
                 disabled={!gameActive || !currentUserHouse || buzerQueue.some(item => item.houseId === currentUserHouse.id)}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg text-lg ${
+                className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg text-lg flex items-center gap-2 ${
                   gameActive && currentUserHouse && !buzerQueue.some(item => item.houseId === currentUserHouse.id)
                     ? 'bg-yellow-500 hover:bg-yellow-600 text-white hover:shadow-xl transform hover:scale-105' 
                     : 'bg-gray-500 text-gray-300 cursor-not-allowed'
                 }`}
               >
-                {!currentUserHouse 
-                  ? 'No House Detected' 
-                  : buzerQueue.some(item => item.houseId === currentUserHouse.id) 
-                  ? '✓ Already Buzzed' 
-                  : gameActive 
-                    ? '🔊 BUZZ IN!' 
-                    : 'Waiting for round...'
-                }
+                {!currentUserHouse ? (
+                  <>
+                    <XCircle className="w-5 h-5" />
+                    No House Detected
+                  </>
+                ) : buzerQueue.some(item => item.houseId === currentUserHouse.id) ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Already Buzzed
+                  </>
+                ) : gameActive ? (
+                  <>
+                    <Bell className="w-5 h-5" />
+                    BUZZ IN!
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-5 h-5" />
+                    Waiting for round...
+                  </>
+                )}
               </button>
             )}
             
@@ -648,6 +671,7 @@ const Buzer = () => {
                 onClick={() => navigate('/quiz-scoring')}
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
               >
+                <ArrowLeft className="w-5 h-5" />
                 Back to Scoring
               </button>
             ) : (
@@ -655,7 +679,8 @@ const Buzer = () => {
                 onClick={() => navigate('/quiz-history')}
                 className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
               >
-                📜 Quiz History
+                <History className="w-5 h-5" />
+                Quiz History
               </button>
             )}
           </div>
@@ -674,7 +699,8 @@ const Buzer = () => {
                   </span>
                 </>
               ) : (
-                <span className="text-lg font-bold text-yellow-400">
+                <span className="text-lg font-bold text-yellow-400 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
                   No active scoring house
                 </span>
               )}
@@ -688,8 +714,18 @@ const Buzer = () => {
           </div>
           <div className="bg-slate-800/50 rounded-lg p-3">
             <div className="text-slate-400 text-sm mb-1">Your Role</div>
-            <div className="text-lg font-bold text-white">
-              {isQuizConductor ? '🎤 Quiz Conductor' : '🔊 Participant'}
+            <div className="text-lg font-bold text-white flex items-center gap-2">
+              {isQuizConductor ? (
+                <>
+                  <Mic2 className="w-5 h-5" />
+                  Quiz Conductor
+                </>
+              ) : (
+                <>
+                  <Headphones className="w-5 h-5" />
+                  Participant
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -698,7 +734,7 @@ const Buzer = () => {
         {!activeScoringHouse && (
           <div className="mt-6 p-4 bg-yellow-500/20 border border-yellow-500/40 rounded-xl">
             <div className="flex items-center gap-3">
-              <div className="text-2xl">⚠️</div>
+              <AlertTriangle className="w-6 h-6 text-yellow-400" />
               <div>
                 <h3 className="text-lg font-bold text-yellow-400 mb-1">No Active Scoring Session</h3>
                 <p className="text-yellow-300 text-sm">
@@ -732,12 +768,6 @@ const Buzer = () => {
                       />
                       <span className="text-slate-400 text-sm">Sound</span>
                     </label>
-                    {/* <button
-                      onClick={testBuzzerSound}
-                      className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm transition-colors"
-                    >
-                      Test
-                    </button> */}
                   </div>
                 )}
               </div>
@@ -746,7 +776,11 @@ const Buzer = () => {
             {buzerQueue.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-24 h-24 bg-slate-700 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                  <span className="text-4xl">{gameActive ? '🔊' : '🔇'}</span>
+                  {gameActive ? (
+                    <Volume2 className="w-12 h-12 text-slate-400" />
+                  ) : (
+                    <VolumeX className="w-12 h-12 text-slate-400" />
+                  )}
                 </div>
                 <p className="text-slate-400 text-lg mb-2">
                   {gameActive ? 'No buzzes yet...' : 'Buzzer round not started'}
@@ -773,7 +807,12 @@ const Buzer = () => {
                     'bg-slate-800/40 border-slate-700/40'
                   ];
                   
-                  const positionIcons = ['🥇', '🥈', '🥉', '4️⃣'];
+                  const positionIcons = [
+                    <Trophy className="w-8 h-8" key="1st" />,
+                    <Award className="w-8 h-8" key="2nd" />,
+                    <Star className="w-8 h-8" key="3rd" />,
+                    <div key="4th" className="text-3xl font-bold">4️⃣</div>
+                  ];
                   
                   return (
                     <div 
@@ -827,7 +866,10 @@ const Buzer = () => {
               <>
                 <div className="space-y-4 mb-6">
                   <div className="p-4 bg-linear-to-r from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/30">
-                    <h3 className="text-lg font-semibold text-white mb-2">🎤 Quiz Conductor</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                      <Mic2 className="w-5 h-5" />
+                      Quiz Conductor
+                    </h3>
                     <p className="text-slate-300 text-sm">
                       You control the buzzer. The buzzer sound will play on YOUR device when houses buzz.
                       A sound will play for the first buzz or when multiple houses buzz simultaneously.
@@ -837,20 +879,40 @@ const Buzer = () => {
                   <div className="p-4 bg-slate-700/50 rounded-xl">
                     <h3 className="text-lg font-semibold text-white mb-2">Current Round</h3>
                     <div className="space-y-2">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-slate-400">Status:</span>
-                        <span className={gameActive ? 'text-green-400 font-bold' : 'text-red-400'}>
-                          {gameActive ? 'ACTIVE' : 'INACTIVE'}
+                        <span className={`flex items-center gap-2 ${gameActive ? 'text-green-400 font-bold' : 'text-red-400'}`}>
+                          {gameActive ? (
+                            <>
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                              ACTIVE
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              INACTIVE
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Buzzes:</span>
                         <span className="text-white">{buzerQueue.length}</span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-slate-400">Sound:</span>
-                        <span className={buzzerSoundEnabled ? 'text-green-400' : 'text-red-400'}>
-                          {buzzerSoundEnabled ? 'ENABLED' : 'DISABLED'}
+                        <span className={`flex items-center gap-2 ${buzzerSoundEnabled ? 'text-green-400' : 'text-red-400'}`}>
+                          {buzzerSoundEnabled ? (
+                            <>
+                              <Volume2 className="w-4 h-4" />
+                              ENABLED
+                            </>
+                          ) : (
+                            <>
+                              <VolumeX className="w-4 h-4" />
+                              DISABLED
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -875,21 +937,34 @@ const Buzer = () => {
                     
                     <div className="mb-6">
                       <p className="text-slate-400 mb-2">Current Status</p>
-                      <div className={`text-2xl font-bold ${
+                      <div className={`text-2xl font-bold flex items-center justify-center gap-2 ${
                         currentUserHouse && buzerQueue.some(item => item.houseId === currentUserHouse.id) 
                           ? 'text-green-400'
                           : gameActive 
                             ? 'text-yellow-400' 
                             : 'text-slate-400'
                       }`}>
-                        {!currentUserHouse
-                          ? 'NO HOUSE DETECTED'
-                          : buzerQueue.some(item => item.houseId === currentUserHouse.id) 
-                          ? '✓ BUZZED IN!' 
-                          : gameActive 
-                            ? 'READY TO BUZZ!' 
-                            : 'WAITING FOR ROUND'
-                        }
+                        {!currentUserHouse ? (
+                          <>
+                            <XCircle className="w-6 h-6" />
+                            NO HOUSE DETECTED
+                          </>
+                        ) : buzerQueue.some(item => item.houseId === currentUserHouse.id) ? (
+                          <>
+                            <CheckCircle className="w-6 h-6" />
+                            BUZZED IN!
+                          </>
+                        ) : gameActive ? (
+                          <>
+                            <Zap className="w-6 h-6" />
+                            READY TO BUZZ!
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-6 h-6" />
+                            WAITING FOR ROUND
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -897,21 +972,21 @@ const Buzer = () => {
                   {/* Buzzer Position Info */}
                   {currentUserHouse && buzerQueue.some(item => item.houseId === currentUserHouse.id) && (
                     <div className="bg-linear-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-6 mb-6">
-                      <div className="text-5xl mb-3">
+                      <div className="text-5xl mb-3 flex justify-center">
                         {(() => {
                           const position = buzerQueue.findIndex(item => item.houseId === currentUserHouse.id) + 1;
                           switch(position) {
-                            case 1: return '🥇';
-                            case 2: return '🥈';
-                            case 3: return '🥉';
-                            default: return `${position}️⃣`;
+                            case 1: return <Trophy className="w-12 h-12" />;
+                            case 2: return <Award className="w-12 h-12" />;
+                            case 3: return <Star className="w-12 h-12" />;
+                            default: return <div className="text-5xl">{position}️⃣</div>;
                           }
                         })()}
                       </div>
-                      <h4 className="text-2xl font-bold text-green-400 mb-2">
+                      <h4 className="text-2xl font-bold text-green-400 mb-2 text-center">
                         You buzzed {getPositionText(buzerQueue.findIndex(item => item.houseId === currentUserHouse.id) + 1)}!
                       </h4>
-                      <p className="text-slate-300">
+                      <p className="text-slate-300 text-center">
                         Reaction time: <span className="text-yellow-400 font-bold">
                           {formatTime(buzerQueue.find(item => item.houseId === currentUserHouse.id).time)} seconds
                         </span>
@@ -923,25 +998,38 @@ const Buzer = () => {
                 <button
                   onClick={handleBuzerClick}
                   disabled={!gameActive || !currentUserHouse || buzerQueue.some(item => item.houseId === currentUserHouse.id)}
-                  className={`w-full py-4 rounded-xl font-semibold transition-all text-2xl shadow-lg mb-4 ${
+                  className={`w-full py-4 rounded-xl font-semibold transition-all text-2xl shadow-lg mb-4 flex items-center justify-center gap-2 ${
                     !gameActive || !currentUserHouse || buzerQueue.some(item => item.houseId === currentUserHouse.id)
                       ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                       : 'bg-yellow-500 hover:bg-yellow-600 text-white hover:shadow-xl transform hover:scale-105'
                   }`}
                 >
-                  {!currentUserHouse 
-                    ? 'NO HOUSE DETECTED' 
-                    : buzerQueue.some(item => item.houseId === currentUserHouse.id) 
-                    ? '✓ ALREADY BUZZED' 
-                    : '🔊 BUZZ IN!'
-                  }
+                  {!currentUserHouse ? (
+                    <>
+                      <XCircle className="w-6 h-6" />
+                      NO HOUSE DETECTED
+                    </>
+                  ) : buzerQueue.some(item => item.houseId === currentUserHouse.id) ? (
+                    <>
+                      <CheckCircle className="w-6 h-6" />
+                      ALREADY BUZZED
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-6 h-6" />
+                      BUZZ IN!
+                    </>
+                  )}
                 </button>
               </>
             )}
 
             {/* Instructions */}
             <div className="mt-8 pt-6 border-t border-slate-700">
-              <h3 className="text-lg font-semibold text-white mb-3">📋 How It Works</h3>
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Info className="w-5 h-5" />
+                How It Works
+              </h3>
               <ul className="space-y-2 text-sm text-slate-400">
                 {isQuizConductor ? (
                   <>

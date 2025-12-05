@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { setCurrentUser, selectHouses, selectCurrentUser, selectUserRole } from '../store/slices/quizSlice';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import toast, { Toaster } from 'react-hot-toast';
+import logo from '../assets/logo.jpg'
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -135,9 +136,19 @@ const Login = () => {
         <div className="glass rounded-2xl p-8 w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-linear-to-r from-purple-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-              <span className="text-5xl font-bold text-white">B</span>
-            </div>
+        <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+          {/* Use logo from assets folder */}
+          <img 
+            src={logo}
+            alt="Leaderboard Logo" 
+            className="w-10 h-10 md:w-12 md:h-12 object-contain"
+            onError={(e) => {
+              // Fallback to Trophy icon if logo fails to load
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = '<svg class="w-10 h-10 md:w-12 md:h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></svg>';
+            }}
+          />
+        </div>
             <h1 className="text-3xl font-bold text-white mb-2">Bridgeon House Cup</h1>
             <p className="text-slate-400">Sign in to your account</p>
           </div>

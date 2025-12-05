@@ -11,6 +11,24 @@ import {
   selectFirebaseConnected
 } from '../store/slices/quizSlice';
 import toast from 'react-hot-toast';
+import { 
+  Target,
+  Shield,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Home,
+  LogOut,
+  Trophy,
+  Users,
+  Award,
+  ChevronRight,
+  Check,
+  Loader2,
+  RefreshCw,
+  Lock,
+  Star
+} from 'lucide-react';
 
 const HouseTargetSelection = () => {
   const dispatch = useDispatch();
@@ -67,7 +85,7 @@ const HouseTargetSelection = () => {
         console.log('❌ No active scoring session');
         setIsLoading(false);
         setAccessChecked(true);
-        toast.error('⛔ No active scoring session. Please wait for admin to start one.');
+        toast.error('No active scoring session. Please wait for admin to start one.');
         return;
       }
 
@@ -85,7 +103,7 @@ const HouseTargetSelection = () => {
         setAccessChecked(true);
         
         const scoringHouseName = houses.find(h => h.id === scoringControl.activeHouseId)?.name || 'Unknown';
-        toast.error(`⛔ Only ${scoringHouseName} can access Target Selection`);
+        toast.error(`Only ${scoringHouseName} can access Target Selection`);
         return;
       }
 
@@ -144,7 +162,7 @@ const HouseTargetSelection = () => {
 
   const handleTargetToggle = (houseId) => {
     if (!hasAccess) {
-      toast.error('⛔ Access denied');
+      toast.error('Access denied');
       return;
     }
     
@@ -157,7 +175,7 @@ const HouseTargetSelection = () => {
 
   const handleStartScoring = async () => {
     if (!hasAccess) {
-      toast.error('⛔ Access denied');
+      toast.error('Access denied');
       return;
     }
     
@@ -185,7 +203,7 @@ const HouseTargetSelection = () => {
 
   const handleSelectAll = () => {
     if (!hasAccess) {
-      toast.error('⛔ Access denied');
+      toast.error('Access denied');
       return;
     }
     
@@ -194,7 +212,7 @@ const HouseTargetSelection = () => {
 
   const handleDeselectAll = () => {
     if (!hasAccess) {
-      toast.error('⛔ Access denied');
+      toast.error('Access denied');
       return;
     }
     
@@ -207,7 +225,7 @@ const HouseTargetSelection = () => {
       <div className="max-w-2xl mx-auto text-center fade-in">
         <div className="glass rounded-2xl p-8 md:p-12">
           <div className="w-20 h-20 bg-slate-700 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-            <span className="text-3xl">🎯</span>
+            <Target className="w-10 h-10 text-blue-400" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Loading Target Selection...</h2>
           <p className="text-slate-400 mb-6 md:mb-8 text-sm md:text-base">
@@ -251,7 +269,7 @@ const HouseTargetSelection = () => {
       <div className="max-w-4xl mx-auto text-center fade-in">
         <div className="glass rounded-2xl p-8 md:p-12">
           <div className="w-20 h-20 bg-slate-700 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-            <span className="text-3xl">⛔</span>
+            <Lock className="w-10 h-10 text-red-400" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Access Restricted</h2>
           
@@ -288,8 +306,9 @@ const HouseTargetSelection = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => navigate('/leaderboard')}
-              className="px-6 py-3 md:px-8 md:py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors shadow-lg hover:shadow-xl"
             >
+              <Trophy className="w-4 h-4" />
               Back to Leaderboard
             </button>
           </div>
@@ -304,7 +323,7 @@ const HouseTargetSelection = () => {
       <div className="max-w-2xl mx-auto text-center fade-in px-4">
         <div className="glass rounded-2xl p-6 md:p-12">
           <div className="w-16 h-16 bg-slate-700 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-2xl">🏠</span>
+            <Home className="w-8 h-8 text-slate-300" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">House Detection Issue</h2>
           <p className="text-slate-400 mb-4 text-sm md:text-base">
@@ -318,14 +337,16 @@ const HouseTargetSelection = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => navigate('/login')}
-              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
             >
-              🔐 Re-login
+              <LogOut className="w-4 h-4" />
+              Re-login
             </button>
             <button
               onClick={() => navigate('/leaderboard')}
-              className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
             >
+              <Trophy className="w-4 h-4" />
               View Leaderboard
             </button>
           </div>
@@ -355,8 +376,8 @@ const HouseTargetSelection = () => {
                   Choose which houses <span className={`font-semibold text-${scoringHouse.color}`}>{scoringHouse.name}</span> will award quiz points to
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-green-400 text-xs font-medium">✅ Access Granted - You are the scoring house</p>
+                  <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" />
+                  <p className="text-green-400 text-xs font-medium">Access Granted - You are the scoring house</p>
                 </div>
               </div>
             </div>
@@ -374,7 +395,8 @@ const HouseTargetSelection = () => {
         <div className="glass rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-3 md:gap-4">
             <div className="text-center lg:text-left mb-3 lg:mb-0">
-              <h2 className="text-lg md:text-xl font-semibold text-white mb-1 md:mb-2">
+              <h2 className="text-lg md:text-xl font-semibold text-white mb-1 md:mb-2 flex items-center gap-2">
+                <Target className="w-5 h-5 text-blue-400" />
                 Available Target Houses
               </h2>
               <p className="text-slate-400 text-xs md:text-sm">
@@ -384,14 +406,16 @@ const HouseTargetSelection = () => {
             <div className="flex space-x-2 md:space-x-3">
               <button
                 onClick={handleSelectAll}
-                className="px-3 py-2 md:px-4 md:py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors text-sm md:text-base"
+                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors text-sm md:text-base"
               >
+                <Check className="w-4 h-4" />
                 Select All
               </button>
               <button
                 onClick={handleDeselectAll}
-                className="px-3 py-2 md:px-4 md:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors text-sm md:text-base"
+                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors text-sm md:text-base"
               >
+                <XCircle className="w-4 h-4" />
                 Deselect All
               </button>
             </div>
@@ -427,7 +451,10 @@ const HouseTargetSelection = () => {
                 
                 {/* Current Points */}
                 <div className="mb-2 md:mb-4">
-                  <p className="text-slate-400 text-xs md:text-sm">House Points</p>
+                  <p className="text-slate-400 text-xs md:text-sm flex items-center justify-center gap-1">
+                    <Star className="w-3 h-3 text-yellow-400" />
+                    House Points
+                  </p>
                   <p className="text-lg md:text-3xl font-bold text-white">{house.totalPoints}</p>
                 </div>
 
@@ -437,11 +464,23 @@ const HouseTargetSelection = () => {
                     ? 'bg-blue-500/20 border border-blue-500/30'
                     : 'bg-slate-700/50 border border-slate-600/30'
                 }`}>
-                  <p className={`font-medium text-xs md:text-sm ${
-                    selectedTargets.includes(house.id) ? 'text-blue-400' : 'text-slate-400'
-                  }`}>
-                    {selectedTargets.includes(house.id) ? '✓ Selected' : 'Click to Select'}
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    {selectedTargets.includes(house.id) ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                        <p className="font-medium text-xs md:text-sm text-blue-400">
+                          Selected
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Target className="w-4 h-4 md:w-5 md:h-5 text-slate-400" />
+                        <p className="font-medium text-xs md:text-sm text-slate-400">
+                          Click to Select
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -452,15 +491,16 @@ const HouseTargetSelection = () => {
         <div className="glass rounded-2xl p-4 md:p-6">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4 md:gap-4">
             <div className="text-center lg:text-left mb-4 lg:mb-0">
-              <p className="text-slate-400 text-sm md:text-lg">
+              <p className="text-slate-400 text-sm md:text-lg flex items-center gap-2">
+                <Award className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" />
                 Ready to start quiz scoring?
               </p>
               <p className="text-white font-semibold text-base md:text-lg">
                 {selectedTargets.length} house{selectedTargets.length !== 1 ? 's' : ''} selected
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-green-400 text-xs font-medium">✅ You are the scoring house</p>
+                <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" />
+                <p className="text-green-400 text-xs font-medium">You are the scoring house</p>
               </div>
             </div>
             
@@ -468,13 +508,15 @@ const HouseTargetSelection = () => {
               <button
                 onClick={handleStartScoring}
                 disabled={selectedTargets.length === 0}
-                className={`px-4 py-2 md:px-8 md:py-3 rounded-xl font-semibold text-base md:text-lg transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 px-4 py-2 md:px-8 md:py-3 rounded-xl font-semibold text-base md:text-lg transition-all duration-200 ${
                   selectedTargets.length === 0
                     ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                     : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                 }`}
               >
-                🎯 Start Scoring
+                <Target className="w-5 h-5" />
+                Start Scoring
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -488,18 +530,28 @@ const HouseTargetSelection = () => {
     <div className="max-w-2xl mx-auto text-center fade-in">
       <div className="glass rounded-2xl p-8 md:p-12">
         <div className="w-20 h-20 bg-slate-700 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-          <span className="text-3xl">❓</span>
+          <AlertCircle className="w-10 h-10 text-yellow-400" />
         </div>
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Unexpected State</h2>
         <p className="text-slate-400 mb-6 text-sm md:text-base">
           Please refresh the page or contact support.
         </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
-        >
-          Refresh Page
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh Page
+          </button>
+          <button
+            onClick={() => navigate('/leaderboard')}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
+          >
+            <Trophy className="w-4 h-4" />
+            Leaderboard
+          </button>
+        </div>
       </div>
     </div>
   );

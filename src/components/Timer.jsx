@@ -9,6 +9,21 @@ import {
   setTimer,
   selectTimer 
 } from '../store/slices/quizSlice';
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Clock,
+  Bell,
+  Volume2,
+  Target,
+  CheckCircle,
+  AlertCircle,
+  Timer as TimerIcon,
+  Zap,
+  ZapOff,
+  Settings
+} from 'lucide-react';
 
 const Timer = () => {
   const dispatch = useDispatch();
@@ -205,7 +220,7 @@ const Timer = () => {
   // Get status text
   const getStatusText = () => {
     if (isRedirecting) {
-      return " Time's Up! Redirecting...";
+      return "Time's Up! Redirecting...";
     }
     if (timer.isRunning) {
       return 'Countdown Running';
@@ -239,7 +254,10 @@ const Timer = () => {
     <div className="max-w-md mx-auto fade-in px-4 min-h-[75vh] md:min-h-auto flex items-center justify-center py-4">
       <div className="glass rounded-2xl p-4 md:p-6 w-full">
         <div className="text-center mb-4 md:mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-white mb-2">Quiz Timer</h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <TimerIcon className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+            <h1 className="text-xl md:text-2xl font-bold text-white">Quiz Timer</h1>
+          </div>
           <p className="text-slate-400 text-xs md:text-sm">Countdown timer for quiz sessions</p>
         </div>
 
@@ -252,23 +270,36 @@ const Timer = () => {
           }`}>
             {formatTime(localTime)}
           </div>
-          <div className={`text-xs md:text-sm ${
+          <div className={`flex items-center justify-center gap-2 text-xs md:text-sm ${
             isRedirecting ? 'text-red-400 font-semibold' : 'text-slate-400'
           }`}>
+            {timer.isRunning ? (
+              <Zap className="w-4 h-4 text-green-400 animate-pulse" />
+            ) : timer.time === 0 && initialTime > 0 ? (
+              <AlertCircle className="w-4 h-4 text-yellow-400" />
+            ) : timer.time > 0 && !timer.isRunning ? (
+              <Pause className="w-4 h-4 text-yellow-400" />
+            ) : initialTime > 0 ? (
+              <CheckCircle className="w-4 h-4 text-blue-400" />
+            ) : (
+              <Settings className="w-4 h-4 text-slate-400" />
+            )}
             {getStatusText()}
           </div>
           
           {/* Sound indicator when alarm is playing */}
           {hasPlayedSound && (
             <div className="mt-2 animate-pulse">
-              <span className="inline-flex items-center px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium">
-                🔔 Alarm Sound Playing
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium">
+                <Bell className="w-3 h-3" />
+                Alarm Sound Playing
               </span>
             </div>
           )}
           
           {initialTime > 0 && !isRedirecting && (
-            <div className="text-slate-500 text-xs mt-1">
+            <div className="flex items-center justify-center gap-2 text-slate-500 text-xs mt-1">
+              <Clock className="w-3 h-3" />
               Initial time: {formatTime(initialTime)}
             </div>
           )}
@@ -295,7 +326,7 @@ const Timer = () => {
           <button
             onClick={handleStartPause}
             disabled={!isStartButtonEnabled()}
-            className={`py-3 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 flex items-center justify-center ${
+            className={`py-3 rounded-xl font-semibold text-sm md:text-base transition-all duration-200 flex items-center justify-center gap-2 ${
               !isStartButtonEnabled()
                 ? 'bg-gray-500 cursor-not-allowed text-gray-300' :
                 timer.isRunning
@@ -305,37 +336,43 @@ const Timer = () => {
           >
             {timer.isRunning ? (
               <>
-                <span className="mr-2">⏸️</span> Pause
+                <Pause className="w-4 h-4 md:w-5 md:h-5" />
+                Pause
               </>
             ) : (
               <>
-                <span className="mr-2">▶️</span> Start
+                <Play className="w-4 h-4 md:w-5 md:h-5" />
+                Start
               </>
             )}
           </button>
           <button
             onClick={handleReset}
             disabled={isRedirecting}
-            className={`py-3 rounded-xl font-semibold text-sm md:text-base shadow-lg transition-all duration-200 flex items-center justify-center ${
+            className={`py-3 rounded-xl font-semibold text-sm md:text-base shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${
               isRedirecting
                 ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                 : 'bg-red-500 hover:bg-red-600 text-white'
             }`}
           >
-            <span className="mr-2">🔄</span> Reset
+            <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
+            Reset
           </button>
         </div>
 
         {/* Quick Time Buttons */}
         <div className="mb-4 md:mb-6">
-          <h3 className="text-sm md:text-base font-semibold text-white mb-2 md:mb-3 text-center">Quick Set</h3>
+          <h3 className="text-sm md:text-base font-semibold text-white mb-2 md:mb-3 text-center flex items-center justify-center gap-2">
+            <Zap className="w-4 h-4 text-yellow-400" />
+            Quick Set
+          </h3>
           <div className="grid grid-cols-5 gap-2">
             {quickTimeButtons.map(time => (
               <button
                 key={time}
                 onClick={() => handleQuickTimeSet(time)}
                 disabled={isRedirecting}
-                className={`py-2 rounded-lg font-medium transition-colors text-xs md:text-sm ${
+                className={`py-2 rounded-lg font-medium transition-colors text-xs md:text-sm flex items-center justify-center gap-1 ${
                   isRedirecting
                     ? 'bg-gray-500 cursor-not-allowed text-gray-300' :
                     initialTime === time 
@@ -351,15 +388,18 @@ const Timer = () => {
 
         {/* Custom Time Input */}
         <div className="glass-dark rounded-xl p-3 md:p-4 mb-3 md:mb-4">
-          <h3 className="text-sm md:text-base font-semibold text-white mb-2 md:mb-3 text-center">Custom Time</h3>
+          <h3 className="text-sm md:text-base font-semibold text-white mb-2 md:mb-3 text-center flex items-center justify-center gap-2">
+            <Settings className="w-4 h-4 text-blue-400" />
+            Custom Time
+          </h3>
           <div className="flex space-x-2">
             <input
               type="number"
-              // min="1"
-              max="3600"
+              min="1"
+              max="60"
               value={customTime}
               onChange={(e) => setCustomTime(parseInt(e.target.value))}
-              placeholder="Seconds"
+              placeholder="Minutes"
               disabled={isRedirecting}
               className={`flex-1 px-3 py-2 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                 isRedirecting
@@ -370,15 +410,19 @@ const Timer = () => {
             <button
               onClick={handleSetCustomTime}
               disabled={isRedirecting || customTime <= 0 || customTime > 60}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center ${
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center gap-2 ${
                 isRedirecting || customTime <= 0 || customTime > 60
                   ? 'bg-gray-500 cursor-not-allowed text-gray-300' 
                   : 'bg-blue-600 hover:bg-blue-500 text-white'
               }`}
             >
+              <Clock className="w-4 h-4" />
               Set
             </button>
           </div>
+          <p className="text-slate-500 text-xs mt-2 text-center">
+            Enter minutes (1-60 minutes)
+          </p>
         </div>
 
         {/* Test Sound Button */}
@@ -386,19 +430,21 @@ const Timer = () => {
           <button
             onClick={testSound}
             disabled={isRedirecting}
-            className="w-full py-2 px-4 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-colors text-sm disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-2 px-4 bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-colors text-sm disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            <span className="mr-2">🔊</span>Alarm Sound
+            <Volume2 className="w-4 h-4" />
+            Test Alarm Sound
           </button>
         </div>
 
         {/* Navigation */}
-        <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-3 mt-4 md:mt-6">
+        <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mt-4 md:mt-6">
           <button
             onClick={() => navigate('/quiz-scoring')}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors text-sm flex items-center justify-center"
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors text-sm flex items-center justify-center gap-2"
           >
-            <span className="mr-2">🎯</span> Back to Scoring
+            <Target className="w-4 h-4" />
+            Back to Scoring
           </button>
         </div>
       </div>
