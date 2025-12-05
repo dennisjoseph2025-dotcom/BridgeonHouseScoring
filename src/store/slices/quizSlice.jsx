@@ -2,11 +2,11 @@ import { createSlice } from '@reduxjs/toolkit';
 import { firebaseService } from '../../services/firebaseService';
 
 // Import house images
-import gryffindorIcon from '../../assets/gryffindor.png';
-import slytherinIcon from '../../assets/slytherin.png';
-import hufflepuffIcon from '../../assets/hufflepuff.png';
-import ravenclawIcon from '../../assets/ravenclaw.png';
-import mediaIcon from '../../assets/media.png';
+import gryffindor from '../../assets/gryffindor.png';
+import slytherin from '../../assets/slytherin.png';
+import hufflepuff from '../../assets/hufflepuff.png';
+import ravenclaw from '../../assets/ravenclaw.png';
+import media from '../../assets/media.png';
 
 const houses = [
   { 
@@ -14,7 +14,7 @@ const houses = [
     name: 'Gryffindor', 
     color: 'gryffindor', 
     bgColor: 'bg-gryffindor', 
-    icon: gryffindorIcon,
+    icon: gryffindor,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -24,7 +24,7 @@ const houses = [
     name: 'Slytherin', 
     color: 'slytherin', 
     bgColor: 'bg-slytherin', 
-    icon: slytherinIcon,
+    icon: slytherin,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -34,7 +34,7 @@ const houses = [
     name: 'Hufflepuff', 
     color: 'hufflepuff', 
     bgColor: 'bg-hufflepuff', 
-    icon: hufflepuffIcon,
+    icon: hufflepuff,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -44,7 +44,7 @@ const houses = [
     name: 'Ravenclaw', 
     color: 'ravenclaw', 
     bgColor: 'bg-ravenclaw', 
-    icon: ravenclawIcon,
+    icon: ravenclaw,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
@@ -54,7 +54,7 @@ const houses = [
     name: 'Media Team', 
     color: 'media', 
     bgColor: 'bg-media', 
-    icon: mediaIcon,
+    icon: media,
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false

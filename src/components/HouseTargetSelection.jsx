@@ -30,6 +30,8 @@ import {
   Star
 } from 'lucide-react';
 
+
+
 const HouseTargetSelection = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
