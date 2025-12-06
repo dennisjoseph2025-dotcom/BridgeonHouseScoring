@@ -121,7 +121,7 @@ const Buzer = () => {
 
     const unsubscribeCurrentRound = firebaseService.listenToPath('buzzerEvents/currentRound', (data, metadata) => {
       if (data) {
-        console.log('📡 Buzzer currentRound event received:', data);
+        // console.log('📡 Buzzer currentRound event received:', data);
         
         switch (data.type) {
           case 'BUZZER_START':

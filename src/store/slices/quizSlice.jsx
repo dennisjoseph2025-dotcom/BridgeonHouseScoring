@@ -171,7 +171,7 @@ const quizSlice = createSlice({
     // Update from Firebase
     updateHousesFromFirebase: (state, action) => {
       const firebaseData = action.payload;
-      console.log('Updating houses from Firebase:', firebaseData);
+      // console.log('Updating houses from Firebase:', firebaseData);
       if (firebaseData) {
         state.houses.forEach(house => {
           if (firebaseData[house.id]) {
@@ -378,7 +378,7 @@ const startHouseListener = () => (dispatch) => {
       dispatch(setFirebaseConnected(false));
       return;
     }
-    console.log('📡 House data received from Firebase:', data);
+    // console.log('📡 House data received from Firebase:', data);
     dispatch(updateHousesFromFirebase(data));
     dispatch(setFirebaseConnected(true));
   });
@@ -476,7 +476,7 @@ const saveAllHousesSingleWrite = () => async (dispatch, getState) => {
       };
     });
 
-    console.log('📦 Single payload for all houses:', allHousesData);
+    // console.log('📦 Single payload for all houses:', allHousesData);
 
     // Single write operation for all houses
     const result = await firebaseService.writeData('houses', allHousesData);
@@ -1002,7 +1002,7 @@ const startScoringControlListener = () => (dispatch) => {
       return;
     }
     
-    console.log('📡 Scoring control update:', data);
+    // console.log('📡 Scoring control update:', data);
     
     if (data) {
       dispatch(setScoringControl(data));

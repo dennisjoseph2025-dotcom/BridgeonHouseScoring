@@ -15,10 +15,10 @@ const firebaseConfig = {
 };
 
 // Log for debugging (remove in production)
-console.log('Firebase Config Loaded:', {
-  projectId: firebaseConfig.projectId,
-  databaseURL: firebaseConfig.databaseURL
-});
+// console.log('Firebase Config Loaded:', {
+//   projectId: firebaseConfig.projectId,
+//   databaseURL: firebaseConfig.databaseURL
+// });
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

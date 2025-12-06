@@ -58,14 +58,14 @@ const HouseTargetSelection = () => {
       clearTimeout(checkTimeoutRef.current);
     }
 
-    console.log('=== TARGET SELECTION ACCESS CHECK ===');
-    console.log('Data status:', {
-      firebaseConnected,
-      housesCount: houses.length,
-      currentUserHouse: currentUserHouse?.name || 'loading',
-      scoringControlLoaded: !!scoringControl,
-      scoringControlStatus: scoringControl?.status
-    });
+    // console.log('=== TARGET SELECTION ACCESS CHECK ===');
+    // console.log('Data status:', {
+    //   firebaseConnected,
+    //   housesCount: houses.length,
+    //   currentUserHouse: currentUserHouse?.name || 'loading',
+    //   scoringControlLoaded: !!scoringControl,
+    //   scoringControlStatus: scoringControl?.status
+    // });
 
     // If we're still waiting for critical data, keep loading
     if (!firebaseConnected || houses.length === 0 || !currentUserHouse || !scoringControl) {

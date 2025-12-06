@@ -55,7 +55,7 @@ class FirebaseService {
       await signInAnonymously(auth);
       this.isAuthenticated = true;
       this.authError = null;
-      console.log('✅ Firebase anonymous authentication successful');
+      // console.log('✅ Firebase anonymous authentication successful');
     } catch (error) {
       console.error('❌ Firebase authentication failed:', error);
       this.isAuthenticated = false;
@@ -150,7 +150,7 @@ class FirebaseService {
       const data = snapshot.val();
       
       if (options.debug) {
-        console.log(`📡 Firebase update for ${path}:`, data);
+        // console.log(`📡 Firebase update for ${path}:`, data);
       }
       
       callback(data, {
@@ -207,7 +207,7 @@ class FirebaseService {
       
       await set(dataRef, dataWithMeta);
       
-      console.log(`✅ Data written to ${path}:`, data);
+      // console.log(`✅ Data written to ${path}:`, data);
       return {
         success: true,
         path,
@@ -279,14 +279,14 @@ class FirebaseService {
   // House-specific operations
   async updateHousePoints(houseId, pointsData) {
     try {
-      console.log('📝 Updating house points in Firebase:', houseId, pointsData);
+      // console.log('📝 Updating house points in Firebase:', houseId, pointsData);
       
       const result = await this.updateData(`houses/${houseId}`, {
         ...pointsData,
         lastUpdated: Date.now()
       });
       
-      console.log('✅ House points updated successfully:', result);
+      // console.log('✅ House points updated successfully:', result);
       return result;
     } catch (error) {
       console.error('❌ Error updating house points:', error);
@@ -299,10 +299,10 @@ class FirebaseService {
   }
 
   listenToHouses(callback) {
-    console.log('🎯 Setting up houses listener...');
+    // console.log('🎯 Setting up houses listener...');
     
     return this.listenToPath('houses', (data, metadata) => {
-      console.log('📡 Houses data received:', data);
+      // console.log('📡 Houses data received:', data);
       callback(data, null);
     }, {
       errorCallback: (error) => {
@@ -323,10 +323,10 @@ class FirebaseService {
 
   // Listen to scoring control
   listenToScoringControl(callback) {
-    console.log('🎯 Setting up scoring control listener...');
+    // console.log('🎯 Setting up scoring control listener...');
     
     return this.listenToPath('scoringControl', (data, metadata) => {
-      console.log('📡 Scoring control data received:', data);
+      // console.log('📡 Scoring control data received:', data);
       callback(data, null);
     }, {
       errorCallback: (error) => {
@@ -339,10 +339,10 @@ class FirebaseService {
 
   // Listen to active scoring session
   listenToScoringSession(callback) {
-    console.log('🎯 Setting up scoring session listener...');
+    // console.log('🎯 Setting up scoring session listener...');
     
     return this.listenToPath('activeScoringSession', (data, metadata) => {
-      console.log('📡 Scoring session data received:', data);
+      // console.log('📡 Scoring session data received:', data);
       callback(data, null);
     }, {
       errorCallback: (error) => {
@@ -367,7 +367,7 @@ class FirebaseService {
       
       await set(sessionRef, dataWithMeta);
       
-      console.log('✅ Scoring session saved to Firebase:', dataWithMeta);
+      // console.log('✅ Scoring session saved to Firebase:', dataWithMeta);
       return {
         success: true,
         data: dataWithMeta,
@@ -391,7 +391,7 @@ class FirebaseService {
       
       await set(sessionRef, null);
       
-      console.log('✅ Scoring session cleared from Firebase');
+      // console.log('✅ Scoring session cleared from Firebase');
       return {
         success: true,
         timestamp: Date.now()
@@ -486,7 +486,7 @@ class FirebaseService {
       
       await set(historyRef, historyData);
       
-      console.log('✅ Scoring session added to history:', newSession);
+      // console.log('✅ Scoring session added to history:', newSession);
       return {
         success: true,
         session: newSession,

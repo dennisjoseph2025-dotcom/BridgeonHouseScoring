@@ -74,15 +74,15 @@ const QuizScoring = () => {
       clearTimeout(checkTimeoutRef.current);
     }
 
-    console.log('=== ACCESS CHECK CYCLE START ===');
-    console.log('Data status:', {
-      firebaseConnected,
-      housesCount: houses.length,
-      currentUserHouse: currentUserHouse?.name || 'loading',
-      scoringControlLoaded: !!scoringControl,
-      scoringControlStatus: scoringControl?.status,
-      scoringHouseId: scoringHouseId
-    });
+    // console.log('=== ACCESS CHECK CYCLE START ===');
+    // console.log('Data status:', {
+    //   firebaseConnected,
+    //   housesCount: houses.length,
+    //   currentUserHouse: currentUserHouse?.name || 'loading',
+    //   scoringControlLoaded: !!scoringControl,
+    //   scoringControlStatus: scoringControl?.status,
+    //   scoringHouseId: scoringHouseId
+    // });
 
     if (!firebaseConnected || houses.length === 0 || !currentUserHouse || !scoringControl) {
       console.log('⏳ Waiting for critical data...');
@@ -318,7 +318,6 @@ const QuizScoring = () => {
   // Main scoring interface
   if (hasAccess && !isLoading) {
     const totalSessionPoints = Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0);
-    {console.log(scoringHouse.icon)}
     return (
       <div className="max-w-7xl mx-auto fade-in px-4">
         {/* Header */}
