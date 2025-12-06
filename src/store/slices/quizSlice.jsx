@@ -2,12 +2,15 @@ import { createSlice } from '@reduxjs/toolkit';
 import { firebaseService } from '../../services/firebaseService';
 
 // Import house images
-import gryffindor from '../../assets/Gryffindor.png';
+import gryffindor from '../../assets/gryffindor.png';
 import slytherin from '../../assets/slytherin.png';
 import hufflepuff from '../../assets/hufflepuff.png';
 import ravenclaw from '../../assets/ravenclaw.png';
 import media from '../../assets/media.png';
-
+console.log('=== IMAGE IMPORTS DEBUG ===');
+console.log('gryffindor import:', ravenclaw);
+console.log('typeof gryffindor:', typeof ravenclaw);
+console.log('gryffindor value:', ravenclaw);
 const houses = [
   { 
     id: 'gryffindor', 
