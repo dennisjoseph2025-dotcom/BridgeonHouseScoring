@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { firebaseService } from '../../services/firebaseService';
 
 // Import house images
-import gryffindor from '../../assets/gryffindor.png';
+import gryffindor from '../../assets/Gryffindor.png';
 import slytherin from '../../assets/slytherin.png';
 import hufflepuff from '../../assets/hufflepuff.png';
 import ravenclaw from '../../assets/ravenclaw.png';
