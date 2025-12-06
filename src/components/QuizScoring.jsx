@@ -523,7 +523,7 @@ const QuizScoring = () => {
                           <img
                             src={house.icon}
                             alt={house.name}
-                            className="w-15 h-15 md:w-15 md:h-15 object-contain"
+                            className="w-5 h-5 md:w-15 md:h-15 rounded-2xl object-contain"
                           />
                         </div>
                         <h3 className={`text-base md:text-lg font-semibold text-${house.color} mb-1`}>
