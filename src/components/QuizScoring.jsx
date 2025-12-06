@@ -318,6 +318,7 @@ const QuizScoring = () => {
   // Main scoring interface
   if (hasAccess && !isLoading) {
     const totalSessionPoints = Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0);
+    {console.log(scoringHouse.icon)}
     return (
       <div className="max-w-7xl mx-auto fade-in px-4">
         {/* Header */}
