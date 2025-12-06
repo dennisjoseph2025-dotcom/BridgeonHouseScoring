@@ -17,7 +17,7 @@ const houses = [
     name: 'Gryffindor', 
     color: 'gryffindor', 
     bgColor: 'bg-gryffindor', 
-    icon: gryffindor,
+    icon: "https://img.icons8.com/?size=100&id=XRczgGb9n2Wk&format=png&color=000000",
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
