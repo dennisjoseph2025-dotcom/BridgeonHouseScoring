@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { setCurrentUser, selectHouses, selectCurrentUser, selectUserRole } from '../store/slices/quizSlice';
+import { 
+  setCurrentUser, 
+  selectHouses, 
+  selectCurrentUser, 
+  selectUserRole,
+  selectScoringControl  // ADD THIS IMPORT
+} from '../store/slices/quizSlice';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import toast, { Toaster } from 'react-hot-toast';
-import logo from '../../public/assets/logo.jpg'
+import logo from '/assets/logo.webp'
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -12,20 +18,50 @@ const Login = () => {
   const houses = useSelector(selectHouses);
   const currentUser = useSelector(selectCurrentUser);
   const userRole = useSelector(selectUserRole);
+  const scoringControl = useSelector(selectScoringControl);  // ADD THIS
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Get the user's house based on email
+  const getUserHouse = (email) => {
+    if (!email) return null;
+    const emailDomain = email.split('@')[0].toLowerCase();
+    
+    // Find house by email prefix
+    return houses.find(house => 
+      emailDomain.includes(house.name.toLowerCase()) ||
+      emailDomain === house.id
+    );
+  };
+
+  // Check if user's house is currently scoring
+  const isUserHouseScoring = (house) => {
+    if (!house || !scoringControl) return false;
+    
+    return scoringControl.status === 'active' && 
+           scoringControl.activeHouseId === house.id &&
+           house.isScoring === true;
+  };
+
   // Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
+      const userHouse = getUserHouse(currentUser.email);
+      const userIsScoring = isUserHouseScoring(userHouse);
+      
       if (userRole === 'admin') {
         navigate('/admin-scoring');
-      } else {
+      } else if (userIsScoring) {
+        // Only scoring houses go to target selection
         navigate('/select-targets');
+      } else {
+        // Non-scoring houses go to leaderboard
+        navigate('/leaderboard');
       }
     }
-  }, [currentUser, userRole, navigate]);
+  }, [currentUser, userRole, navigate, houses, scoringControl]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,7 +75,10 @@ const Login = () => {
       // Determine user role
       const isAdmin = email === 'admin@bridgeon.com';
       const userRole = isAdmin ? 'admin' : 'house';
-      const houseId = isAdmin ? null : email.split('@')[0];
+      const userHouse = getUserHouse(email);
+      
+      // Check if user's house is scoring
+      const isScoringHouse = isUserHouseScoring(userHouse);
 
       // Update Redux store
       dispatch(setCurrentUser({
@@ -49,17 +88,25 @@ const Login = () => {
           uid: user.uid
         },
         role: userRole,
-        houseId: houseId
+        houseId: userHouse?.id || null
       }));
 
-      toast.success(`Welcome ${isAdmin ? 'Administrator' : user.email.split('@')[0]}!`, {
+      const displayName = isAdmin ? 'Administrator' : user.email.split('@')[0];
+      toast.success(`Welcome ${displayName}!`, {
         icon: '🎉',
         duration: 2000
       });
 
       // Add delay before redirect to see success toast
       setTimeout(() => {
-        navigate(isAdmin ? '/admin-scoring' : '/select-targets');
+        if (isAdmin) {
+          navigate('/admin-scoring');
+        } else if (isScoringHouse) {
+          navigate('/select-targets');
+        } else {
+          // Non-scoring house - go to leaderboard
+          navigate('/leaderboard');
+        }
       }, 1000);
 
     } catch (error) {
@@ -82,22 +129,7 @@ const Login = () => {
     }
   };
 
-  const quickLogin = (quickEmail, quickPassword) => {
-    setEmail(quickEmail);
-    setPassword(quickPassword);
-  };
-
-  // // Quick login credentials
-  const quickLogins = [
-    { role: '👑 Admin', email: 'admin@bridgeon.com', password: 'admin123Head', color: 'bg-purple-500 hover:bg-purple-600' },
-    { role: '🦁 Gryffindor', email: 'gryffindor@bridgeon.com', password: 'gryffindor123red', color: 'bg-red-500 hover:bg-red-600' },
-    { role: '🐍 Slytherin', email: 'slytherin@bridgeon.com', password: 'slytherin123green', color: 'bg-green-500 hover:bg-green-600' },
-    { role: '🦡 Hufflepuff', email: 'hufflepuff@bridgeon.com', password: 'hufflepuff123yellow', color: 'bg-yellow-500 hover:bg-yellow-600' },
-    { role: '🦅 Ravenclaw', email: 'ravenclaw@bridgeon.com', password: 'ravenclaw123blue', color: 'bg-blue-500 hover:bg-blue-600' },
-    { role: '📸 Media', email: 'media@bridgeon.com', password: 'media123white', color: 'bg-indigo-500 hover:bg-indigo-600' }
-  ];
-
-  // If already logged in, show loading screen
+  // Loading screen when already logged in
   if (currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -107,7 +139,7 @@ const Login = () => {
           </div>
           <h2 className="text-2xl font-bold text-white mb-4">Welcome Back!</h2>
           <p className="text-slate-400 mb-4">
-            Redirecting you to {userRole === 'admin' ? 'Admin Panel' : 'Scoring'}...
+            Redirecting you to the dashboard...
           </p>
           <div className="w-full bg-slate-700 rounded-full h-2">
             <div className="bg-blue-500 h-2 rounded-full animate-pulse"></div>
@@ -119,7 +151,6 @@ const Login = () => {
 
   return (
     <>
-      {/* Toaster only for Login page */}
       <Toaster 
         position="top-center"
         toastOptions={{
@@ -136,19 +167,17 @@ const Login = () => {
         <div className="glass rounded-2xl p-8 w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-        <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-          {/* Use logo from assets folder */}
-          <img 
-            src={logo}
-            alt="Leaderboard Logo" 
-            className="w-10 h-10 md:w-12 md:h-12 object-contain"
-            onError={(e) => {
-              // Fallback to Trophy icon if logo fails to load
-              e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = '<svg class="w-10 h-10 md:w-12 md:h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></svg>';
-            }}
-          />
-        </div>
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+              <img 
+                src={logo}
+                alt="Leaderboard Logo" 
+                className="w-10 h-10 md:w-12 md:h-12 object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<svg class="w-10 h-10 md:w-12 md:h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/><path d="M22 19H2"/></svg>';
+                }}
+              />
+            </div>
             <h1 className="text-3xl font-bold text-white mb-2">Bridgeon House Cup</h1>
             <p className="text-slate-400">Sign in to your account</p>
           </div>
@@ -198,26 +227,7 @@ const Login = () => {
             </button>
           </form>
 
-          Quick Login Buttons
-          <div className="mt-8">
-            <h3 className="text-slate-400 text-sm font-medium mb-3 text-center">
-              Quick Sign In
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {quickLogins.map((cred, index) => (
-                <button
-                  key={index}
-                  onClick={() => quickLogin(cred.email, cred.password)}
-                  className={`py-2 ${cred.color} text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                  disabled={isLoading}
-                >
-                  {cred.role}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Instructions */}
+          {/* Information about access */}
           <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
             <p className="text-slate-400 text-sm text-center">
               Use your @bridgeon.com email and password to sign in

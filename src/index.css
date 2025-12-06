@@ -48,7 +48,7 @@ body {
 .bg-slytherin { background: linear-gradient(135deg, var(--slytherin), #2A623D); }
 .bg-hufflepuff { background: linear-gradient(135deg, var(--hufflepuff), #FFED86); }
 .bg-ravenclaw { background: linear-gradient(135deg, var(--ravenclaw), #222F5B); }
-.bg-media { background: linear-gradient(135deg, var(--media), #4A7BC1); }
+.bg-media { background: linear-gradient(135deg, var(--media), #d17717); }
 
 .text-gryffindor { color: var(--gryffindor); }
 .text-slytherin { color: var(--slytherin); }

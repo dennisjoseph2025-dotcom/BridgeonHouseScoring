@@ -13,7 +13,7 @@ import {
   Users,
   Shield
 } from 'lucide-react';
-import logo from '../../public/assets/logo.jpg'
+import logo from '/assets/logo.webp'
 
 const Leaderboard = () => {
   const houses = useSelector(selectHouses);

@@ -379,23 +379,61 @@ const QuizScoring = () => {
 
               <div className="flex space-x-2 md:space-x-3 w-full sm:w-auto">
                 <button
-                  onClick={() => {
-                    const totalPoints = Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0);
-                    if (totalPoints === 0) {
-                      toast.error('No quiz points to save');
-                      return;
-                    }
-                    dispatch(saveCurrentQuizToFirebase(saveMode));
-                  }}
-                  disabled={totalSessionPoints === 0}
-                  className={`flex-1 sm:flex-none px-4 py-2 md:px-6 md:py-3 rounded-xl font-semibold transition-all duration-200 text-sm md:text-base flex items-center justify-center gap-2 ${totalSessionPoints === 0
-                      ? 'bg-gray-500 cursor-not-allowed text-gray-300'
-                      : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
-                    }`}
-                >
-                  <Save className="w-5 h-5" />
-                  {saveMode === 'replace' ? 'Save' : 'Add'}
-                </button>
+  onClick={async () => {
+    const totalPoints = Object.values(currentQuizPoints).reduce((sum, points) => sum + points, 0);
+    if (totalPoints === 0) {
+      toast.error('No quiz points to save');
+      return;
+    }
+    
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading('Saving quiz points...');
+      
+      // Dispatch and wait for response
+      const result = await dispatch(saveCurrentQuizToFirebase(saveMode));
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
+      if (result.success) {
+        toast.success(`Quiz points saved successfully! (${saveMode} mode)`, {
+          icon: <CheckCircle className="w-4 h-4" />,
+          duration: 3000
+        });
+      } else {
+        if (result.accessDenied) {
+          toast.error(result.error, {
+            icon: <Shield className="w-4 h-4" />,
+            duration: 5000
+          });
+        } else if (result.localSave) {
+          toast.warning('Saved locally (Firebase unavailable)', {
+            icon: <AlertTriangle className="w-4 h-4" />,
+            duration: 4000
+          });
+        } else {
+          toast.error(`Save failed: ${result.error}`, {
+            icon: <XCircle className="w-4 h-4" />,
+            duration: 4000
+          });
+        }
+      }
+    } catch (error) {
+      toast.error(`Error: ${error.message}`, {
+        icon: <AlertCircle className="w-4 h-4" />
+      });
+    }
+  }}
+  disabled={totalSessionPoints === 0}
+  className={`flex-1 sm:flex-none px-4 py-2 md:px-6 md:py-3 rounded-xl font-semibold transition-all duration-200 text-sm md:text-base flex items-center justify-center gap-2 ${totalSessionPoints === 0
+      ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+      : 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl'
+    }`}
+>
+  <Save className="w-5 h-5" />
+  {saveMode === 'replace' ? 'Save' : 'Add'}
+</button>
 
                 <button
                   onClick={() => {

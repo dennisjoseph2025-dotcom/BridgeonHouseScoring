@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
-import logo from '../../public/assets/logo.jpg'
+import logo from '/assets/logo.webp'
 import { 
   selectHouses, 
   selectCurrentUser, 
