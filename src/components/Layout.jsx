@@ -88,7 +88,7 @@ const Layout = ({ children }) => {
   // Base navigation items for all users - using Lucide icons with same alignment
   const baseNavItems = [
     { 
-      path: '/leaderboard', 
+      path: '/', 
       label: 'Leaderboard', 
       icon: <Trophy className="w-5 h-5" />
     },
@@ -143,6 +143,11 @@ const Layout = ({ children }) => {
 
   // Combine navigation items based on user role and scoring session
   const getNavItems = () => {
+    // If user is not logged in, show only base items
+    if (!currentUser) {
+      return baseNavItems;
+    }
+    
     if (userRole === 'admin') {
       return [...adminNavItems, ...baseNavItems];
     } else if (userRole === 'house') {
@@ -172,11 +177,16 @@ const Layout = ({ children }) => {
       await signOut(auth);
       dispatch(logoutUser());
       localStorage.removeItem('selectedTargets');
-      navigate('/login');
+      navigate('/leaderboard');
       setIsMenuOpen(false);
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+    setIsMenuOpen(false);
   };
 
   const toggleMenu = () => {
@@ -190,9 +200,94 @@ const Layout = ({ children }) => {
   // Check if scoring control is active
   const isScoringControlActive = scoringControl.status === 'active';
 
+  // If user is not logged in, show only login button in header
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
+        {/* Fixed Header - Only logo and login button for non-logged in users */}
+        <header className="bg-slate-900/95 border-b border-slate-700 fixed top-0 left-0 right-0 z-50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* Left: Logo and BRIDGEON */}
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={logo}
+                    alt="Bridgeon Logo"
+                    className="w-full h-full object-contain bg-white pr-0.5 p-1"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-white">BRIDGEON</h1>
+                  <p className="text-xs text-slate-400 hidden sm:block">House Cup Quiz System</p>
+                </div>
+              </div>
+
+              {/* Right: Only Login button (matching logout button style) */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleLogin}
+                  className="px-3 py-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                >
+                  Login
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <div className="flex-1 pt-16">
+          <main className="container mx-auto px-4 py-6">
+            {children}
+          </main>
+        </div>
+
+        {/* Footer - Minimal */}
+        <footer className="bg-slate-900 border-t border-slate-700 mt-auto">
+          <div className="container mx-auto px-4 py-3 text-center">
+            <p className="text-slate-400 text-sm">
+              BRIDGEON House Cup System
+            </p>
+          </div>
+        </footer>
+
+        {/* Toast Notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#1E293B',
+              color: '#F8FAFC',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              fontSize: '14px',
+              fontWeight: '500'
+            },
+            success: {
+              iconTheme: {
+                primary: '#10B981',
+                secondary: '#1E293B',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#EF4444',
+                secondary: '#1E293B',
+              },
+            },
+          }}
+        />
+      </div>
+    );
+  }
+
+  // If user is logged in, show the full layout with menu
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-      {/* Fixed Header - Always show minimal content */}
+      {/* Fixed Header - Full header for logged in users */}
       <header className="bg-slate-900/95 border-b border-slate-700 fixed top-0 left-0 right-0 z-50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           {/* Minimal Header Content - Always visible */}
@@ -244,18 +339,16 @@ const Layout = ({ children }) => {
             {/* Right: User Status, Menu Button, and Logout */}
             <div className="flex items-center space-x-2">
               {/* Firebase Connection Status */}
-              {currentUser && (
-                <div className="hidden sm:flex items-center space-x-1 mr-2">
-                  {firebaseConnected ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-500" />
-                  )}
-                  <span className="text-xs text-slate-400">
-                    {firebaseConnected ? 'Connected' : 'Offline'}
-                  </span>
-                </div>
-              )}
+              <div className="hidden sm:flex items-center space-x-1 mr-2">
+                {firebaseConnected ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-500" />
+                )}
+                <span className="text-xs text-slate-400">
+                  {firebaseConnected ? 'Connected' : 'Offline'}
+                </span>
+              </div>
 
               {/* Mobile Current Scoring Indicator (when active) */}
               {isScoringControlActive && activeScoringHouse && (
@@ -281,14 +374,12 @@ const Layout = ({ children }) => {
               </button>
 
               {/* Logout Button */}
-              {currentUser && (
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm hidden sm:block"
-                >
-                  Logout
-                </button>
-              )}
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors text-sm hidden sm:block"
+              >
+                Logout
+              </button>
             </div>
           </div>
 
@@ -331,51 +422,49 @@ const Layout = ({ children }) => {
               )}
 
               {/* Mobile User Info */}
-              {currentUser && (
-                <div className="mb-3 p-3 bg-slate-700/80 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-slate-400">
-                        {userRole === 'admin' 
-                          ? 'Administrator' 
-                          : `Logged in as: ${currentUserHouse?.name || 'House'}`
-                        }
+              <div className="mb-3 p-3 bg-slate-700/80 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">
+                      {userRole === 'admin' 
+                        ? 'Administrator' 
+                        : `Logged in as: ${currentUserHouse?.name || 'House'}`
+                      }
+                    </p>
+                    <p className="text-white font-medium text-base">{currentUser.displayName}</p>
+                    <p className="text-sm text-slate-400">{currentUser.email}</p>
+                    
+                    {isScoringControlActive && userRole === 'house' && (
+                      <p className={`text-xs mt-1 flex items-center ${
+                        currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
+                          ? 'text-green-400' 
+                          : 'text-blue-400'
+                      }`}>
+                        {currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId ? (
+                          <>
+                            <Mic2 className="w-3 h-3 mr-1" />
+                            Quiz Conductor
+                          </>
+                        ) : (
+                          <>
+                            <Headphones className="w-3 h-3 mr-1" />
+                            Participant
+                          </>
+                        )}
                       </p>
-                      <p className="text-white font-medium text-base">{currentUser.displayName}</p>
-                      <p className="text-sm text-slate-400">{currentUser.email}</p>
-                      
-                      {isScoringControlActive && userRole === 'house' && (
-                        <p className={`text-xs mt-1 flex items-center ${
-                          currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId
-                            ? 'text-green-400' 
-                            : 'text-blue-400'
-                        }`}>
-                          {currentUserHouse && currentUserHouse.id === scoringControl.activeHouseId ? (
-                            <>
-                              <Mic2 className="w-3 h-3 mr-1" />
-                              Quiz Conductor
-                            </>
-                          ) : (
-                            <>
-                              <Headphones className="w-3 h-3 mr-1" />
-                              Participant
-                            </>
-                          )}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {/* Mobile Logout Button */}
-                      <button
-                        onClick={handleLogout}
-                        className="px-3 py-1.5 bg-red-600 text-white border border-red-700 rounded-lg hover:bg-red-700 transition-colors text-sm sm:hidden"
-                      >
-                        Logout
-                      </button>
-                    </div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {/* Mobile Logout Button */}
+                    <button
+                      onClick={handleLogout}
+                      className="px-3 py-1.5 bg-red-600 text-white border border-red-700 rounded-lg hover:bg-red-700 transition-colors text-sm sm:hidden"
+                    >
+                      Logout
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Navigation Links Grid */}
               <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">

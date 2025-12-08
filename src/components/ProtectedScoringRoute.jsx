@@ -30,7 +30,7 @@ const ProtectedScoringRoute = ({ children }) => {
     }
   }, [currentUser, userRole, canCurrentUserScore, scoringControl, houses]);
 
-  // Check if user is logged in
+  // Check if user is logged in - for scoring routes, login is required
   if (!currentUser) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

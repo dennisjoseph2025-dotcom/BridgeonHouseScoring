@@ -51,7 +51,8 @@ const houses = [
     adminPoints: 0,
     totalPoints: 0,
     isScoring: false
-  },
+  }
+  ,
   { 
     id: 'media', 
     name: 'Media Team', 

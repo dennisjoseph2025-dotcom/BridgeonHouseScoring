@@ -81,14 +81,7 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={
-        currentUser ?
-          (userRole === 'admin' ?
-            <Navigate to="/admin-scoring" replace /> :
-            <Navigate to="/select-targets" replace />
-          ) :
-          <Navigate to="/login" replace />
-      } />
+      <Route path="/" element={<Layout><Leaderboard /></Layout>} /> {/* Changed this line */}
       <Route path="/select-targets" element={
         <ProtectedScoringRoute>
           <Layout>
@@ -125,12 +118,10 @@ function AppContent() {
         </ProtectedRoute>
       } />
       <Route path="/leaderboard" element={
-        <ProtectedRoute>
-          <Layout>
-            <Leaderboard />
-          </Layout>
-        </ProtectedRoute>
-      } />
+        <Layout>
+          <Leaderboard />
+        </Layout>
+      } /> {/* Changed this - no ProtectedRoute for leaderboard */}
       <Route path="/buzer" element={<Buzer />} />
       <Route path="/scoring-control" element={
         <ProtectedRoute allowedRoles={['admin']}>

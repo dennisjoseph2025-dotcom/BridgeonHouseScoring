@@ -546,7 +546,7 @@ const Buzer = () => {
       <div className="glass rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 ${isQuizConductor && activeScoringHouse ? activeScoringHouse.bgColor : currentUserHouse ? currentUserHouse.bgColor : 'bg-slate-700'} rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+            <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 ${isQuizConductor && activeScoringHouse ? activeScoringHouse.bgColor : currentUserHouse ? currentUserHouse.bgColor : 'bg-slate-700'} rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shrink-0`}>
               <img 
                 src={isQuizConductor && activeScoringHouse ? activeScoringHouse.icon : currentUserHouse ? currentUserHouse.icon : ''} 
                 alt={isQuizConductor && activeScoringHouse ? activeScoringHouse.name : currentUserHouse ? currentUserHouse.name : 'House'}
@@ -707,7 +707,7 @@ const Buzer = () => {
         {!activeScoringHouse && (
           <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-yellow-500/20 border border-yellow-500/40 rounded-lg sm:rounded-xl">
             <div className="flex items-start sm:items-center gap-2 sm:gap-3">
-              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 flex-shrink-0" />
+              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 shrink-0" />
               <div>
                 <h3 className="text-sm sm:text-lg font-bold text-yellow-400 mb-1">No Active Scoring Session</h3>
                 <p className="text-yellow-300 text-xs sm:text-sm">
@@ -894,7 +894,7 @@ const Buzer = () => {
               </>
             ) : (
               <>
-                <div className="space-y-4 mb-4 sm:mb-6 flex-grow">
+                <div className="space-y-4 mb-4 sm:mb-6 grow">
                   <div className="text-center">
                     <div className={`w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 ${currentUserHouse ? currentUserHouse.bgColor : 'bg-slate-700'} rounded-xl sm:rounded-2xl mx-auto mb-3 sm:mb-4 flex items-center justify-center shadow-lg`}>
                       <img 
@@ -971,7 +971,7 @@ const Buzer = () => {
                   <button
                     onClick={handleBuzerClick}
                     disabled={!gameActive || !currentUserHouse || buzerQueue.some(item => item.houseId === currentUserHouse.id)}
-                    className={`w-full py-4 sm:py-5 md:py-6 rounded-xl font-semibold transition-all text-xl sm:text-2xl md:text-3xl shadow-lg mb-4 flex items-center justify-center gap-2 flex-grow min-h-[100px] sm:min-h-[120px] md:min-h-[140px] ${
+                    className={`w-full py-4 sm:py-5 md:py-6 rounded-xl font-semibold transition-all text-xl sm:text-2xl md:text-3xl shadow-lg mb-4 flex items-center justify-center gap-2 grow min-h-[100px] sm:min-h-[120px] md:min-h-[140px] ${
                       !gameActive || !currentUserHouse || buzerQueue.some(item => item.houseId === currentUserHouse.id)
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                         : 'bg-yellow-500 hover:bg-yellow-600 text-white hover:shadow-xl transform hover:scale-105 active:scale-95'
